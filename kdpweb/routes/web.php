@@ -2,6 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\SetupController;
+
+// Setup Route (initialize database and create admin user)
+Route::get('/setup', [SetupController::class, 'initialize']);
 
 // Login Routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
