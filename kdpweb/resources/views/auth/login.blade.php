@@ -177,9 +177,13 @@
             </button>
             <button type="button" class="role-option" data-role="faculty">
                 Faculty Login
-                <small>Enter faculty dashboard</small>
+                <small>Use your email address and password</small>
             </button>
         </div>
+
+        <p style="text-align: center; margin-bottom: 20px; color: #6b7280; font-size: 13px;">
+            Faculty login uses your registered email address and password.
+        </p>
         
         @if ($errors->any())
             <div class="form-error">
