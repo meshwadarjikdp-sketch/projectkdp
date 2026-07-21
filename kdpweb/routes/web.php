@@ -1,11 +1,16 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\SetupController;
+use Illuminate\Support\Facades\Route;
 
 // Setup Route (initialize database and create admin user)
 Route::get('/setup', [SetupController::class, 'initialize']);
+
+// Registration Routes
+Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+Route::post('/register', [RegisterController::class, 'register'])->name('register.submit');
 
 // Login Routes
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
@@ -23,4 +28,3 @@ Route::middleware('auth')->group(function () {
 Route::get('/', function () {
     return view('welcome');
 });
-

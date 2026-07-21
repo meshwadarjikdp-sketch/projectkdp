@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Register</title>
     <style>
         * {
             margin: 0;
@@ -98,18 +98,6 @@
             transform: translateY(0);
         }
         
-        .credentials-hint {
-            text-align: center;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
-            font-size: 12px;
-            color: #999;
-        }
-        
-        .credentials-hint strong {
-            color: #333;
-        }
         .auth-links {
             text-align: center;
             margin-top: 20px;
@@ -130,19 +118,35 @@
 <body>
     <div class="login-container">
         <h2 style="text-align: center; margin-bottom: 10px; color: #555;">KDP PATAN</h2>
-        <h1>Login</h1>
+        <h1>Create User</h1>
         
         @if ($errors->any())
             <div class="form-error">
-                <strong>Login Failed!</strong>
+                <strong>Registration Failed!</strong>
                 @foreach ($errors->all() as $error)
                     <div>{{ $error }}</div>
                 @endforeach
             </div>
         @endif
         
-        <form method="POST" action="{{ route('login.submit') }}">
+        <form method="POST" action="{{ route('register.submit') }}">
             @csrf
+            
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    value="{{ old('name') }}"
+                    required 
+                    autofocus
+                    placeholder="John Doe"
+                >
+                @error('name')
+                    <div class="error-message">{{ $message }}</div>
+                @enderror
+            </div>
             
             <div class="form-group">
                 <label for="email">Email</label>
@@ -152,7 +156,6 @@
                     name="email" 
                     value="{{ old('email') }}"
                     required 
-                    autofocus
                     placeholder="admin@example.com"
                 >
                 @error('email')
@@ -174,16 +177,11 @@
                 @enderror
             </div>
             
-            <button type="submit" class="submit-btn">Login</button>
+            <button type="submit" class="submit-btn">Register</button>
         </form>
         
-        <div class="credentials-hint">
-            <strong>Demo Account:</strong><br>
-            Email: admin@example.com<br>
-            Password: admin
-        </div>
         <div class="auth-links">
-            Don't have an account? <a href="{{ route('register') }}">Register here</a>
+            Already have an account? <a href="{{ route('login') }}">Login here</a>
         </div>
     </div>
 </body>
