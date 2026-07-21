@@ -114,6 +114,7 @@
 </head>
 <body>
     <div class="login-container">
+        <h2 style="text-align: center; margin-bottom: 10px; color: #555;">KDP PATAN</h2>
         <h1>Login</h1>
         
         @if ($errors->any())
