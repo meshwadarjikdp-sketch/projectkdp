@@ -97,6 +97,40 @@
         .submit-btn:active {
             transform: translateY(0);
         }
+
+        .role-selector {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .role-option {
+            padding: 12px 14px;
+            border: 1px solid #d9d9d9;
+            border-radius: 8px;
+            background: #f8f9ff;
+            color: #4b5563;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+
+        .role-option.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.2);
+        }
+
+        .role-option small {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 3px;
+            opacity: 0.8;
+        }
         
         .credentials-hint {
             text-align: center;
@@ -131,6 +165,21 @@
     <div class="login-container">
         <h2 style="text-align: center; margin-bottom: 10px; color: #555;">KDP PATAN</h2>
         <h1>Login</h1>
+
+        <div class="role-selector" aria-label="Login role selection">
+            <button type="button" class="role-option active" data-role="admin">
+                Admin Login
+                <small>Access administration tools</small>
+            </button>
+            <button type="button" class="role-option" data-role="student">
+                Student Login
+                <small>Use student portal access</small>
+            </button>
+            <button type="button" class="role-option" data-role="faculty">
+                Faculty Login
+                <small>Enter faculty dashboard</small>
+            </button>
+        </div>
         
         @if ($errors->any())
             <div class="form-error">
@@ -143,6 +192,7 @@
         
         <form method="POST" action="{{ route('login.submit') }}">
             @csrf
+            <input type="hidden" name="role" id="login-role" value="admin">
             
             <div class="form-group">
                 <label for="email">Email</label>
@@ -186,5 +236,17 @@
             Don't have an account? <a href="{{ route('register') }}">Register here</a>
         </div>
     </div>
+
+    <script>
+        document.querySelectorAll('.role-option').forEach(function (button) {
+            button.addEventListener('click', function () {
+                document.querySelectorAll('.role-option').forEach(function (item) {
+                    item.classList.remove('active');
+                });
+                this.classList.add('active');
+                document.getElementById('login-role').value = this.dataset.role;
+            });
+        });
+    </script>
 </body>
 </html>
