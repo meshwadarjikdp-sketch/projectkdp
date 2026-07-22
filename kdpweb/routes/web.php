@@ -3,6 +3,7 @@
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\FacultyController;
 use App\Http\Controllers\LoginController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\SetupController;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,8 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::middleware('auth')->group(function () {
     Route::resource('departments', DepartmentController::class)->only(['index', 'store']);
     Route::resource('faculties', FacultyController::class);
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications', [NotificationController::class, 'store'])->name('notifications.store');
 
     Route::get('/dashboard', function () {
         return view('dashboard');
