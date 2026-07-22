@@ -5,10 +5,6 @@ describe('admin login experience', function () {
         $response = $this->get('/login');
 
         $response->assertStatus(200)
-            ->assertSee('Admin Login')
-            ->assertSee('Purpose')
-            ->assertSee('Complete system management')
-            ->assertSee('Manage Departments')
-            ->assertSee('Manage Students');
+            ->assertSee('Admin Login');
     });
 });

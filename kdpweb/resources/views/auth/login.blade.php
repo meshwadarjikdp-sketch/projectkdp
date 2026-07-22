@@ -200,24 +200,6 @@
         <h2 style="text-align: center; margin-bottom: 10px; color: #555;">KDP PATAN</h2>
         <h1>Admin Login</h1>
 
-        <div class="admin-intro">
-            <h3>Purpose</h3>
-            <p>Complete system management</p>
-            <ul class="feature-list">
-                <li>Secure Login</li>
-                <li>Dashboard</li>
-                <li>Manage Departments</li>
-                <li>Manage Faculty</li>
-                <li>Manage Subjects</li>
-                <li>Manage Classrooms</li>
-                <li>Manage Students</li>
-                <li>Generate Timetable</li>
-                <li>Notification Management</li>
-                <li>Reports</li>
-                <li>User Management</li>
-            </ul>
-        </div>
-
         <div class="role-selector" aria-label="Login role selection">
             <button type="button" class="role-option active" data-role="admin">
                 Admin Login
