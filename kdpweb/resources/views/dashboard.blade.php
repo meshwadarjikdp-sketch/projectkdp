@@ -10,70 +10,106 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f7fa;
+            color: #1f2937;
         }
-        
-        .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1rem 2rem;
+
+        .dashboard-shell {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            min-height: 100vh;
         }
-        
-        .navbar h2 {
-            font-size: 24px;
+
+        .sidebar {
+            width: 290px;
+            background: linear-gradient(135deg, #1f3c88 0%, #3b82f6 100%);
+            color: white;
+            padding: 2rem 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
-        
+
+        .profile-card {
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .profile-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .profile-meta {
+            font-size: 0.92rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
         .logout-btn {
             background: rgba(255, 255, 255, 0.2);
             color: white;
-            padding: 10px 20px;
+            padding: 0.7rem 0.9rem;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 0.95rem;
             transition: background 0.3s;
         }
-        
+
         .logout-btn:hover {
             background: rgba(255, 255, 255, 0.3);
         }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .sidebar-nav a {
+            color: white;
+            text-decoration: none;
+            padding: 0.85rem 1rem;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            transition: background 0.2s ease;
+        }
+
+        .sidebar-nav a:hover {
+            background: rgba(255, 255, 255, 0.22);
+        }
+
+        .main-panel {
+            flex: 1;
             padding: 2rem;
         }
-        
+
         .welcome-card {
             background: white;
-            border-radius: 10px;
+            border-radius: 16px;
             padding: 2rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 16px rgba(15, 23, 42, 0.08);
             margin-bottom: 2rem;
+            text-align: center;
         }
-        
+
         .welcome-card h1 {
-            color: #333;
+            color: #111827;
+            margin-bottom: 0.75rem;
+            font-size: 2rem;
+        }
+
+        .welcome-card p {
+            color: #4b5563;
             margin-bottom: 1rem;
-        }
-        
-        .user-info {
-            background: #f0f2f5;
-            padding: 1rem;
-            border-radius: 5px;
-            margin-top: 1rem;
-        }
-        
-        .user-info p {
-            margin: 0.5rem 0;
-            color: #555;
         }
 
         .dashboard-grid {
@@ -84,53 +120,51 @@
 
         .dashboard-card {
             display: block;
-            padding: 1.4rem;
+            padding: 1.2rem;
             border-radius: 12px;
             background: white;
-            color: #333;
+            color: #111827;
             text-decoration: none;
-            box-shadow: 0 2px 16px rgba(102, 126, 234, 0.08);
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            font-weight: 600;
         }
 
         .dashboard-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 5px 18px rgba(102, 126, 234, 0.16);
+            box-shadow: 0 6px 18px rgba(59, 130, 246, 0.16);
         }
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h2>Dashboard</h2>
-        <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
-            @csrf
-            <button type="submit" class="logout-btn">Logout</button>
-        </form>
-    </div>
-    
-    <div class="container">
-        <div class="welcome-card">
-            <h1>Welcome, {{ Auth::user()->name }}!</h1>
-            <p>You have successfully logged in to the administration dashboard.</p>
-            
-            <div class="user-info">
-                <p><strong>Email:</strong> {{ Auth::user()->email }}</p>
-                <p><strong>User ID:</strong> {{ Auth::user()->id }}</p>
-                <p><strong>Profile:</strong> {{ Auth::user()->adminProfile?->profile_name ?? 'Not created yet' }}</p>
-                <p><strong>Login Time:</strong> {{ date('Y-m-d H:i:s') }}</p>
+    <div class="dashboard-shell">
+        <aside class="sidebar">
+            <div class="profile-card">
+                <div class="profile-name">{{ Auth::user()->adminProfile?->profile_name ?? 'Admin Profile' }}</div>
+                <div class="profile-meta">{{ Auth::user()->email }}</div>
+                <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
+                    @csrf
+                    <button type="submit" class="logout-btn">Logout</button>
+                </form>
             </div>
-        </div>
 
-        <div class="dashboard-grid">
-            <a href="#" class="dashboard-card">Manage Departments</a>
-            <a href="#" class="dashboard-card">Manage Faculty</a>
-            <a href="#" class="dashboard-card">Manage Subjects</a>
-            <a href="#" class="dashboard-card">Manage Classrooms</a>
-            <a href="#" class="dashboard-card">Manage Students</a>
-            <a href="#" class="dashboard-card">Generate Timetable</a>
-            <a href="#" class="dashboard-card">Notification Management</a>
-            <a href="#" class="dashboard-card">Reports</a>
-        </div>
+            <nav class="sidebar-nav">
+                <a href="#">Manage Faculty</a>
+                <a href="#">Manage Subjects</a>
+                <a href="#">Manage Classrooms</a>
+                <a href="#">Manage Students</a>
+                <a href="#">Generate Timetable</a>
+                <a href="#">Notification Management</a>
+                <a href="#">Reports</a>
+            </nav>
+        </aside>
+
+        <main class="main-panel">
+            <div class="welcome-card">
+                <h1>Welcome Admin</h1>
+                <p>You have successfully logged in to the administration dashboard.</p>
+            </div>
+        </main>
     </div>
 </body>
 </html>
