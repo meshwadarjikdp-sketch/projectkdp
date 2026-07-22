@@ -20,7 +20,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // Protected Routes (require authentication)
 Route::middleware('auth')->group(function () {
-    Route::resource('departments', DepartmentController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::resource('departments', DepartmentController::class)->only(['index', 'store']);
 
     Route::get('/dashboard', function () {
         return view('dashboard');
