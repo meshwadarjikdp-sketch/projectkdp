@@ -131,6 +131,40 @@
             margin-top: 3px;
             opacity: 0.8;
         }
+
+        .admin-intro {
+            background: #f8f9ff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 20px;
+        }
+
+        .admin-intro h3 {
+            color: #4f46e5;
+            font-size: 13px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .admin-intro p {
+            color: #374151;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .feature-list {
+            padding-left: 18px;
+            color: #4b5563;
+            font-size: 13px;
+            display: grid;
+            gap: 4px;
+        }
+
+        .feature-list li {
+            margin: 0;
+        }
         
         .credentials-hint {
             text-align: center;
@@ -164,7 +198,25 @@
 <body>
     <div class="login-container">
         <h2 style="text-align: center; margin-bottom: 10px; color: #555;">KDP PATAN</h2>
-        <h1>Login</h1>
+        <h1>Admin Login</h1>
+
+        <div class="admin-intro">
+            <h3>Purpose</h3>
+            <p>Complete system management</p>
+            <ul class="feature-list">
+                <li>Secure Login</li>
+                <li>Dashboard</li>
+                <li>Manage Departments</li>
+                <li>Manage Faculty</li>
+                <li>Manage Subjects</li>
+                <li>Manage Classrooms</li>
+                <li>Manage Students</li>
+                <li>Generate Timetable</li>
+                <li>Notification Management</li>
+                <li>Reports</li>
+                <li>User Management</li>
+            </ul>
+        </div>
 
         <div class="role-selector" aria-label="Login role selection">
             <button type="button" class="role-option active" data-role="admin">
