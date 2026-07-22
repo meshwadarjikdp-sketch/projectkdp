@@ -150,7 +150,7 @@
 
             <nav class="sidebar-nav">
                 <a href="{{ route('departments.index') }}">Manage Department</a>
-                <a href="#">Manage Faculty</a>
+                <a href="{{ route('faculties.index') }}">Manage Faculty</a>
                 <a href="#">Manage Subjects</a>
                 <a href="#">Manage Classrooms</a>
                 <a href="#">Manage Students</a>
