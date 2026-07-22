@@ -155,7 +155,7 @@
                 <a href="#">Manage Classrooms</a>
                 <a href="#">Manage Students</a>
                 <a href="#">Generate Timetable</a>
-                <a href="#">Notification Management</a>
+                <a href="{{ route('notifications.index') }}">Notification Management</a>
                 <a href="#">Reports</a>
             </nav>
         </aside>
