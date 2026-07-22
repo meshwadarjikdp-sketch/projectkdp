@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdminProfile;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -36,10 +37,16 @@ class SetupController extends Controller
             User::where('email', 'admin@example.com')->delete();
 
             // Create admin user
-            User::create([
+            $admin = User::create([
                 'name' => 'Administrator',
                 'email' => 'admin@example.com',
                 'password' => Hash::make('admin'),
+            ]);
+
+            AdminProfile::firstOrCreate([
+                'user_id' => $admin->id,
+            ], [
+                'profile_name' => 'Administrator Profile',
             ]);
 
             return response()->json([
