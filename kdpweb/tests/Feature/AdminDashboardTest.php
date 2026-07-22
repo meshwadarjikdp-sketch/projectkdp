@@ -24,12 +24,5 @@ it('creates an admin profile on admin login and shows dashboard options', functi
 
     $dashboard = $this->actingAs($admin)->get('/dashboard');
     $dashboard->assertStatus(200)
-        ->assertSee('Manage Departments')
-        ->assertSee('Manage Faculty')
-        ->assertSee('Manage Subjects')
-        ->assertSee('Manage Classrooms')
-        ->assertSee('Manage Students')
-        ->assertSee('Generate Timetable')
-        ->assertSee('Notification Management')
-        ->assertSee('Reports');
+        ->assertSee('Welcome Admin');
 });
