@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\FacultyController;
 use App\Http\Controllers\LoginController;
@@ -24,6 +25,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::middleware('auth')->group(function () {
     Route::resource('departments', DepartmentController::class)->only(['index', 'store']);
     Route::resource('faculties', FacultyController::class);
+    Route::resource('classrooms', ClassroomController::class);
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications', [NotificationController::class, 'store'])->name('notifications.store');
 

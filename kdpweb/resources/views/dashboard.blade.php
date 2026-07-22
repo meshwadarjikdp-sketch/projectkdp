@@ -152,7 +152,7 @@
                 <a href="{{ route('departments.index') }}">Manage Department</a>
                 <a href="{{ route('faculties.index') }}">Manage Faculty</a>
                 <a href="#">Manage Subjects</a>
-                <a href="#">Manage Classrooms</a>
+                <a href="{{ route('classrooms.index') }}">Manage Classrooms</a>
                 <a href="#">Manage Students</a>
                 <a href="#">Generate Timetable</a>
                 <a href="{{ route('notifications.index') }}">Notification Management</a>
