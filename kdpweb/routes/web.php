@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\FacultyController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\SetupController;
@@ -21,6 +22,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 // Protected Routes (require authentication)
 Route::middleware('auth')->group(function () {
     Route::resource('departments', DepartmentController::class)->only(['index', 'store']);
+    Route::resource('faculties', FacultyController::class);
 
     Route::get('/dashboard', function () {
         return view('dashboard');
