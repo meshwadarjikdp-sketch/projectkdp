@@ -1,137 +1,104 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Classrooms</title>
-    <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; color: #1f2937; }
-        .page-shell { min-height: 100vh; padding: 2rem; }
-        .page-header, .classroom-form, .classroom-table { max-width: 1280px; margin: 0 auto; }
-        .page-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
-        .back-link { color: #1f3c88; font-weight: 600; text-decoration: none; }
-        h1 { margin: 0 0 0.35rem; color: #111827; }
-        .subtitle { margin: 0; color: #64748b; }
-        .classroom-form, .classroom-table { background: white; border-radius: 12px; box-shadow: 0 2px 14px rgba(15, 23, 42, 0.08); }
-        .classroom-form { padding: 1.25rem; margin-bottom: 1.25rem; }
-        form { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; align-items: end; }
-        label { display: block; margin-bottom: 0.4rem; color: #374151; font-size: 0.88rem; font-weight: 700; }
-        input, select { width: 100%; border: 1px solid #cbd5e1; border-radius: 7px; padding: 0.7rem 0.8rem; font: inherit; }
-        input:focus, select:focus { outline: 2px solid rgba(59, 130, 246, 0.25); border-color: #3b82f6; }
-        button { border: 0; border-radius: 7px; padding: 0.7rem 0.9rem; background: #1f3c88; color: white; font: inherit; font-weight: 700; cursor: pointer; }
-        .secondary-btn { background: #64748b; }
-        .classroom-table { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; }
-        th, td { padding: 0.9rem 1rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
-        th { background: #f8fafc; color: #475569; font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; }
-        .actions { display: flex; gap: 0.5rem; }
-        .feedback { max-width: 1280px; margin: 0 auto 1.25rem; padding: 0.85rem 1rem; border-radius: 7px; background: #dcfce7; color: #166534; }
-        .validation-errors { max-width: 1280px; margin: 0 auto 1.25rem; padding: 0.85rem 1rem; border-radius: 7px; background: #fee2e2; color: #991b1b; }
-        @media (max-width: 1000px) { form { grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 700px) { .page-shell { padding: 1rem; } form { grid-template-columns: 1fr; } }
-    </style>
-</head>
-<body>
-    <main class="page-shell">
-        <header class="page-header">
+@extends('layouts.admin')
+
+@section('title', 'Manage Classrooms')
+
+@section('content')
+    <header class="page-header">
+        <div>
+            <h1 class="page-title">Manage Classrooms</h1>
+            <p class="subtitle">Add, edit, and remove rooms for classes and labs</p>
+        </div>
+        <a class="back-link" href="{{ route('dashboard') }}">Back to dashboard</a>
+    </header>
+
+    @if (session('success'))
+        <div class="feedback">{{ session('success') }}</div>
+    @endif
+
+    @if ($errors->any())
+        <div class="validation-errors">
+            <strong>Please correct the classroom details.</strong>
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <section class="panel-card">
+        <form action="{{ $editingClassroom ? route('classrooms.update', $editingClassroom) : route('classrooms.store') }}" method="POST" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1rem;align-items:end;">
+            @csrf
+            @if ($editingClassroom)
+                @method('PATCH')
+            @endif
             <div>
-                <h1>Manage Classrooms</h1>
-                <p class="subtitle">Add, edit, and remove rooms for classes and labs</p>
+                <label for="room_number" style="display:block;margin-bottom:0.4rem;color:#374151;font-size:0.88rem;font-weight:700;">Room number</label>
+                <input id="room_number" name="room_number" value="{{ old('room_number', $editingClassroom?->room_number) }}" required style="width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:0.7rem 0.8rem;font:inherit;">
             </div>
-            <a class="back-link" href="{{ route('dashboard') }}">Back to dashboard</a>
-        </header>
-
-        @if (session('success'))
-            <div class="feedback">{{ session('success') }}</div>
-        @endif
-
-        @if ($errors->any())
-            <div class="validation-errors">
-                <strong>Please correct the classroom details.</strong>
-                <ul>
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
+            <div>
+                <label for="capacity" style="display:block;margin-bottom:0.4rem;color:#374151;font-size:0.88rem;font-weight:700;">Capacity</label>
+                <input id="capacity" type="number" name="capacity" value="{{ old('capacity', $editingClassroom?->capacity) }}" required style="width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:0.7rem 0.8rem;font:inherit;">
+            </div>
+            <div>
+                <label for="room_type" style="display:block;margin-bottom:0.4rem;color:#374151;font-size:0.88rem;font-weight:700;">Lab / Classroom</label>
+                <select id="room_type" name="room_type" required style="width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:0.7rem 0.8rem;font:inherit;">
+                    <option value="">Select type</option>
+                    @foreach (['Lab / Classroom', 'Staff Room', 'HOD Office', 'Classroom', 'Server Room', 'Electric Room', 'Seminar Room', 'Department Library', 'Conference Room'] as $roomType)
+                        <option value="{{ $roomType }}" {{ old('room_type', $editingClassroom?->room_type) == $roomType ? 'selected' : '' }}>{{ $roomType }}</option>
                     @endforeach
-                </ul>
+                </select>
             </div>
-        @endif
-
-        <section class="classroom-form">
-            <form action="{{ $editingClassroom ? route('classrooms.update', $editingClassroom) : route('classrooms.store') }}" method="POST">
-                @csrf
+            <div>
+                <label for="floor" style="display:block;margin-bottom:0.4rem;color:#374151;font-size:0.88rem;font-weight:700;">Floor</label>
+                <input id="floor" type="number" name="floor" value="{{ old('floor', $editingClassroom?->floor) }}" required style="width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:0.7rem 0.8rem;font:inherit;">
+            </div>
+            <div>
+                <label for="availability" style="display:block;margin-bottom:0.4rem;color:#374151;font-size:0.88rem;font-weight:700;">Availability</label>
+                <input id="availability" name="availability" value="{{ old('availability', $editingClassroom?->availability) }}" required style="width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:0.7rem 0.8rem;font:inherit;">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <button type="submit" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#1f3c88;color:white;font:inherit;font-weight:700;cursor:pointer;">{{ $editingClassroom ? 'Update Classroom' : 'Add Classroom' }}</button>
                 @if ($editingClassroom)
-                    @method('PATCH')
+                    <a href="{{ route('classrooms.index') }}" style="display:inline-block;"><button type="button" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#64748b;color:white;font:inherit;font-weight:700;cursor:pointer;">Cancel</button></a>
                 @endif
-                <div>
-                    <label for="room_number">Room number</label>
-                    <input id="room_number" name="room_number" value="{{ old('room_number', $editingClassroom?->room_number) }}" required>
-                </div>
-                <div>
-                    <label for="capacity">Capacity</label>
-                    <input id="capacity" type="number" name="capacity" value="{{ old('capacity', $editingClassroom?->capacity) }}" required>
-                </div>
-                <div>
-                    <label for="room_type">Lab / Classroom</label>
-                    <select id="room_type" name="room_type" required>
-                        <option value="">Select type</option>
-                        @foreach (['Lab / Classroom', 'Staff Room', 'HOD Office', 'Classroom', 'Server Room', 'Electric Room', 'Seminar Room', 'Department Library', 'Conference Room'] as $roomType)
-                            <option value="{{ $roomType }}" {{ old('room_type', $editingClassroom?->room_type) == $roomType ? 'selected' : '' }}>{{ $roomType }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label for="floor">Floor</label>
-                    <input id="floor" type="number" name="floor" value="{{ old('floor', $editingClassroom?->floor) }}" required>
-                </div>
-                <div>
-                    <label for="availability">Availability</label>
-                    <input id="availability" name="availability" value="{{ old('availability', $editingClassroom?->availability) }}" required>
-                </div>
-                <div>
-                    <button type="submit">{{ $editingClassroom ? 'Update Classroom' : 'Add Classroom' }}</button>
-                    @if ($editingClassroom)
-                        <a href="{{ route('classrooms.index') }}" style="display:inline-block;margin-top:0.5rem;"><button type="button" class="secondary-btn">Cancel</button></a>
-                    @endif
-                </div>
-            </form>
-        </section>
+            </div>
+        </form>
+    </section>
 
-        <section class="classroom-table">
-            <table>
-                <thead>
+    <section class="panel-card" style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;min-width:900px;">
+            <thead>
+                <tr>
+                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Room number</th>
+                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Capacity</th>
+                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Lab / Classroom</th>
+                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Floor</th>
+                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Availability</th>
+                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($classrooms as $classroom)
                     <tr>
-                        <th>Room number</th>
-                        <th>Capacity</th>
-                        <th>Lab / Classroom</th>
-                        <th>Floor</th>
-                        <th>Availability</th>
-                        <th>Actions</th>
+                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $classroom->room_number }}</td>
+                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $classroom->capacity }}</td>
+                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $classroom->room_type }}</td>
+                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $classroom->floor }}</td>
+                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $classroom->availability }}</td>
+                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">
+                            <div style="display:flex;gap:0.5rem;">
+                                <a href="{{ route('classrooms.index', ['edit' => $classroom->id]) }}"><button type="button" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#64748b;color:white;font:inherit;font-weight:700;cursor:pointer;">Edit</button></a>
+                                <form action="{{ route('classrooms.destroy', $classroom) }}" method="POST" onsubmit="return confirm('Delete this classroom?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#1f3c88;color:white;font:inherit;font-weight:700;cursor:pointer;">Delete</button>
+                                </form>
+                            </div>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @foreach ($classrooms as $classroom)
-                        <tr>
-                            <td>{{ $classroom->room_number }}</td>
-                            <td>{{ $classroom->capacity }}</td>
-                            <td>{{ $classroom->room_type }}</td>
-                            <td>{{ $classroom->floor }}</td>
-                            <td>{{ $classroom->availability }}</td>
-                            <td>
-                                <div class="actions">
-                                    <a href="{{ route('classrooms.index', ['edit' => $classroom->id]) }}"><button type="button" class="secondary-btn">Edit</button></a>
-                                    <form action="{{ route('classrooms.destroy', $classroom) }}" method="POST" onsubmit="return confirm('Delete this classroom?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit">Delete</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </section>
-    </main>
-</body>
-</html>
+                @endforeach
+            </tbody>
+        </table>
+    </section>
+@endsection
