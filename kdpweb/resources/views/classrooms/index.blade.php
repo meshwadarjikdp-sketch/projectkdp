@@ -75,8 +75,9 @@
                     <label for="room_type">Lab / Classroom</label>
                     <select id="room_type" name="room_type" required>
                         <option value="">Select type</option>
-                        <option value="Classroom" {{ old('room_type', $editingClassroom?->room_type) == 'Classroom' ? 'selected' : '' }}>Classroom</option>
-                        <option value="Lab" {{ old('room_type', $editingClassroom?->room_type) == 'Lab' ? 'selected' : '' }}>Lab</option>
+                        @foreach (['Lab / Classroom', 'Staff Room', 'HOD Office', 'Classroom', 'Server Room', 'Electric Room', 'Seminar Room', 'Department Library', 'Conference Room'] as $roomType)
+                            <option value="{{ $roomType }}" {{ old('room_type', $editingClassroom?->room_type) == $roomType ? 'selected' : '' }}>{{ $roomType }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div>
