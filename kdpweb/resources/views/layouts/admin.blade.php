@@ -134,6 +134,63 @@
             margin-bottom: 1.25rem;
         }
 
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #111827;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .stat-card {
+            padding: 1rem 1.1rem;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+            border: 1px solid #dbeafe;
+        }
+
+        .stat-card .label {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-bottom: 0.35rem;
+        }
+
+        .stat-card .value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .report-card {
+            padding: 1rem;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            color: #111827;
+        }
+
+        .report-card strong {
+            display: block;
+            margin-bottom: 0.35rem;
+        }
+
+        .report-card span {
+            color: #64748b;
+            font-size: 0.92rem;
+            line-height: 1.4;
+        }
+
         .feedback,
         .validation-errors {
             max-width: 1280px;
@@ -190,10 +247,10 @@
                 <a href="{{ route('faculties.index') }}">Manage Faculty</a>
                 <a href="{{ route('classrooms.index') }}">Manage Classrooms</a>
                 <a href="{{ route('notifications.index') }}">Notification Management</a>
+                <a href="{{ route('reports.index') }}">Report Dashboard</a>
                 <a href="#">Manage Subjects</a>
                 <a href="#">Manage Students</a>
                 <a href="#">Generate Timetable</a>
-                <a href="#">Reports</a>
             </nav>
         </aside>
 

@@ -76,9 +76,9 @@
                 <tbody>
                     @foreach ($departments as $department)
                         <tr>
-                            <td style="padding:1rem 1.25rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $department->department_code }}</td>
-                            <td style="padding:1rem 1.25rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $department->department_name }}</td>
-                            <td style="padding:1rem 1.25rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $department->hod_name }}</td>
+                            <td>{{ $department->department_code }}</td>
+                            <td>{{ $department->department_name }}</td>
+                            <td>{{ $department->hod_name }}</td>
                         </tr>
                     @endforeach
                 </tbody>

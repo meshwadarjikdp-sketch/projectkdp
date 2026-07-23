@@ -7,6 +7,11 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\SetupController;
+use App\Models\Classroom;
+use App\Models\Department;
+use App\Models\Faculty;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 // Setup Route (initialize database and create admin user)
@@ -30,8 +35,21 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifications', [NotificationController::class, 'store'])->name('notifications.store');
 
     Route::get('/dashboard', function () {
-        return view('dashboard');
+        $stats = [
+            'students' => User::count(),
+            'faculty' => Faculty::count(),
+            'departments' => Department::count(),
+            'classes' => Classroom::where('availability', true)->count(),
+            'attendance' => 0,
+            'notifications' => Notification::count(),
+        ];
+
+        return view('dashboard', compact('stats'));
     })->name('dashboard');
+
+    Route::get('/reports', function () {
+        return view('reports.index');
+    })->name('reports.index');
 });
 
 // Public Routes
