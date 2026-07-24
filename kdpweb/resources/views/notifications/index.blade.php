@@ -3,6 +3,44 @@
 @section('title', 'Notification Management')
 
 @section('content')
+    <style>
+        form {
+            animation: slideInUp 0.6s ease-out;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            animation: pulse 0.3s ease-out;
+        }
+
+        button[type="submit"] {
+            animation: fadeInScale 0.5s ease-out;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        .panel-card:nth-child(3) > div > div {
+            animation: slideInUp 0.5s ease-out backwards;
+        }
+
+        .panel-card:nth-child(3) > div > div:nth-child(1) { animation-delay: 0.3s; }
+        .panel-card:nth-child(3) > div > div:nth-child(2) { animation-delay: 0.35s; }
+        .panel-card:nth-child(3) > div > div:nth-child(3) { animation-delay: 0.4s; }
+        .panel-card:nth-child(3) > div > div:nth-child(4) { animation-delay: 0.45s; }
+        .panel-card:nth-child(3) > div > div:nth-child(5) { animation-delay: 0.5s; }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            50% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0); }
+        }
+    </style>
+
     <header class="page-header">
         <div>
             <h1 class="page-title">Notification Management</h1>

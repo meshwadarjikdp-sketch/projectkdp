@@ -3,6 +3,19 @@
 @section('title', 'Reports')
 
 @section('content')
+    <style>
+        .report-card {
+            animation: slideInUp 0.5s ease-out backwards;
+        }
+
+        .report-card:nth-child(1) { animation-delay: 0.3s; }
+        .report-card:nth-child(2) { animation-delay: 0.35s; }
+        .report-card:nth-child(3) { animation-delay: 0.4s; }
+        .report-card:nth-child(4) { animation-delay: 0.45s; }
+        .report-card:nth-child(5) { animation-delay: 0.5s; }
+        .report-card:nth-child(6) { animation-delay: 0.55s; }
+    </style>
+
     <header class="page-header">
         <div>
             <h1 class="page-title">Reports Dashboard</h1>

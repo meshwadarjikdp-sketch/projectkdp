@@ -3,6 +3,55 @@
 @section('title', 'Manage Classrooms')
 
 @section('content')
+    <style>
+        form {
+            animation: slideInUp 0.6s ease-out;
+        }
+        
+        input:focus, select:focus {
+            animation: pulse 0.3s ease-out;
+        }
+
+        button[type="submit"], button[type="button"] {
+            animation: fadeInScale 0.5s ease-out;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        .panel-card:nth-child(3) table {
+            animation: fadeInScale 0.7s ease-out;
+        }
+
+        tbody tr {
+            animation: slideInUp 0.5s ease-out backwards;
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:nth-child(1) { animation-delay: 0.3s; }
+        tbody tr:nth-child(2) { animation-delay: 0.35s; }
+        tbody tr:nth-child(3) { animation-delay: 0.4s; }
+        tbody tr:nth-child(4) { animation-delay: 0.45s; }
+        tbody tr:nth-child(5) { animation-delay: 0.5s; }
+
+        tbody tr:hover {
+            background-color: #f0f7ff;
+            box-shadow: inset 0 0 0 1px #dbeafe;
+            transform: scale(1.01);
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+            50% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0); }
+        }
+    </style>
+
     <header class="page-header">
         <div>
             <h1 class="page-title">Manage Classrooms</h1>
