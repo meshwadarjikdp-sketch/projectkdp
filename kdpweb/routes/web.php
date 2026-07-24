@@ -30,7 +30,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // Protected Routes (require authentication)
 Route::middleware('auth')->group(function () {
-    Route::resource('departments', DepartmentController::class)->only(['index', 'store']);
+    Route::resource('departments', DepartmentController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('faculties', FacultyController::class);
     Route::resource('classrooms', ClassroomController::class);
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');

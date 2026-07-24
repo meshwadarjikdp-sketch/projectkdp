@@ -88,21 +88,29 @@
     </section>
 
     <section class="panel-card">
-        <form action="{{ route('departments.store') }}" method="POST" style="display:grid;grid-template-columns:repeat(3,1fr) auto;gap:1rem;align-items:end;">
+        <form action="{{ $editingDepartment ? route('departments.update', $editingDepartment) : route('departments.store') }}" method="POST" style="display:grid;grid-template-columns:repeat(3,1fr) auto;gap:1rem;align-items:end;">
             @csrf
+            @if ($editingDepartment)
+                @method('PATCH')
+            @endif
             <div>
                 <label for="department_code" style="display:block;margin-bottom:0.4rem;color:#374151;font-size:0.88rem;font-weight:700;">Department code</label>
-                <input id="department_code" name="department_code" value="{{ old('department_code') }}" required style="width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:0.7rem 0.8rem;font:inherit;">
+                <input id="department_code" name="department_code" value="{{ old('department_code', $editingDepartment?->department_code) }}" required style="width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:0.7rem 0.8rem;font:inherit;">
             </div>
             <div>
                 <label for="department_name" style="display:block;margin-bottom:0.4rem;color:#374151;font-size:0.88rem;font-weight:700;">Department name</label>
-                <input id="department_name" name="department_name" value="{{ old('department_name') }}" required style="width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:0.7rem 0.8rem;font:inherit;">
+                <input id="department_name" name="department_name" value="{{ old('department_name', $editingDepartment?->department_name) }}" required style="width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:0.7rem 0.8rem;font:inherit;">
             </div>
             <div>
                 <label for="hod_name" style="display:block;margin-bottom:0.4rem;color:#374151;font-size:0.88rem;font-weight:700;">HOD name</label>
-                <input id="hod_name" name="hod_name" value="{{ old('hod_name') }}" required style="width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:0.7rem 0.8rem;font:inherit;">
+                <input id="hod_name" name="hod_name" value="{{ old('hod_name', $editingDepartment?->hod_name) }}" required style="width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:0.7rem 0.8rem;font:inherit;">
             </div>
-            <button type="submit" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#1f3c88;color:white;font:inherit;font-weight:700;cursor:pointer;">Add Department</button>
+            <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <button type="submit" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#1f3c88;color:white;font:inherit;font-weight:700;cursor:pointer;">{{ $editingDepartment ? 'Update Department' : 'Add Department' }}</button>
+                @if ($editingDepartment)
+                    <a href="{{ route('departments.index') }}" style="display:inline-block;"><button type="button" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#64748b;color:white;font:inherit;font-weight:700;cursor:pointer;">Cancel</button></a>
+                @endif
+            </div>
         </form>
     </section>
 
@@ -116,6 +124,7 @@
                         <th style="padding:1rem 1.25rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Department code</th>
                         <th style="padding:1rem 1.25rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Department name</th>
                         <th style="padding:1rem 1.25rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">HOD name</th>
+                        <th style="padding:1rem 1.25rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -124,6 +133,16 @@
                             <td>{{ $department->department_code }}</td>
                             <td>{{ $department->department_name }}</td>
                             <td>{{ $department->hod_name }}</td>
+                            <td>
+                                <div style="display:flex;gap:0.5rem;">
+                                    <a href="{{ route('departments.index', ['edit' => $department->id]) }}"><button type="button" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#64748b;color:white;font:inherit;font-weight:700;cursor:pointer;">Edit</button></a>
+                                    <form action="{{ route('departments.destroy', $department) }}" method="POST" onsubmit="return confirm('Delete this department?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#1f3c88;color:white;font:inherit;font-weight:700;cursor:pointer;">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>

@@ -29,8 +29,8 @@ it('allows an authenticated admin to view and add departments', function () {
         ->assertSee('Search department')
         ->assertSee('department-options')
         ->assertSee('Select or type a department')
-        ->assertDontSee('Edit')
-        ->assertDontSee('Delete');
+        ->assertSee('Edit')
+        ->assertSee('Delete');
 });
 
 it('filters departments through the department search options', function () {
