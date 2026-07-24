@@ -37,7 +37,7 @@ it('allows an authenticated admin to create, update, and delete faculties', func
         ->patch(route('faculties.update', $faculty), [
             'faculty_name' => 'Dr. John Smith',
             'faculty_id' => 'FAC-001',
-            'department_id' => 'Electrical Engineering',
+            'department_id' => 'Computer Engineering',
             'email' => 'john.smith@example.com',
             'password' => 'new-secret',
             'subject' => 'Data Structures',
