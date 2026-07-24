@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Department;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -10,15 +11,22 @@ use Illuminate\View\View;
 
 class DepartmentController extends Controller
 {
+    private function sharedDepartmentsQuery(): Builder
+    {
+        return Department::shared();
+    }
+
     public function index(Request $request): View
     {
         $editingDepartment = $request->query('edit')
-            ? Department::query()->findOrFail((int) $request->query('edit'))
+            ? $this->sharedDepartmentsQuery()->findOrFail((int) $request->query('edit'))
             : null;
 
         $search = trim((string) $request->query('search'));
-        $departmentOptions = Department::query()->orderBy('department_name')->get();
-        $departments = Department::query()
+        $departmentOptions = $this->sharedDepartmentsQuery()
+            ->orderBy('department_name')
+            ->get();
+        $departments = $this->sharedDepartmentsQuery()
             ->when($search !== '', function ($query) use ($search): void {
                 $term = "%{$search}%";
 
