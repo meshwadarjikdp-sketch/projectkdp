@@ -55,3 +55,20 @@ it('filters departments through the department search options', function () {
         ->assertSee('<td>Electrical Engineering</td>', false)
         ->assertDontSee('<td>Computer Science</td>', false);
 });
+
+it('shows departments created by one admin to another authenticated admin', function () {
+    $adminA = User::factory()->create();
+    $adminB = User::factory()->create();
+
+    $this->actingAs($adminA)->post(route('departments.store'), [
+        'department_code' => 'MEC',
+        'department_name' => 'Mechanical Engineering',
+        'hod_name' => 'Dr. Grace Hopper',
+    ]);
+
+    $this->actingAs($adminB)
+        ->get(route('departments.index'))
+        ->assertOk()
+        ->assertSee('Mechanical Engineering')
+        ->assertSee('MEC');
+});
