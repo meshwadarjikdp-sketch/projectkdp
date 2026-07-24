@@ -82,12 +82,10 @@ class FacultyController extends Controller
 
     private function departmentOptions(): array
     {
-        return [
-            'Computer Engineering',
-            'Civil Engineering',
-            'Electrical Engineering',
-            'Mechanical Engineering',
-        ];
+        return Department::query()
+            ->orderBy('department_name')
+            ->pluck('department_name')
+            ->toArray();
     }
 
     private function resolveDepartmentId(mixed $departmentIdentifier): int
