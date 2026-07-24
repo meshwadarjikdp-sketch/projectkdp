@@ -18,6 +18,49 @@
         @endif
     </head>
     <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col">
+        <style>
+            @keyframes fadeInDown {
+                from { opacity: 0; transform: translateY(-20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes fadeInUp {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideInLeft {
+                from { opacity: 0; transform: translateX(-30px); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+            @keyframes slideInRight {
+                from { opacity: 0; transform: translateX(30px); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+            @keyframes scaleIn {
+                from { opacity: 0; transform: scale(0.95); }
+                to { opacity: 1; transform: scale(1); }
+            }
+            header { animation: fadeInDown 0.6s ease-out; }
+            nav { animation: slideInRight 0.6s ease-out 0.1s backwards; }
+            nav a { animation: slideInRight 0.5s ease-out backwards; transition: all 0.3s ease; }
+            nav a:nth-child(1) { animation-delay: 0.15s; }
+            nav a:nth-child(2) { animation-delay: 0.2s; }
+            nav a:nth-child(3) { animation-delay: 0.25s; }
+            nav a:hover { transform: translateY(-3px); }
+            main { animation: fadeInUp 0.8s ease-out 0.2s backwards; }
+            .text-\[13px\] { animation: slideInLeft 0.7s ease-out 0.3s backwards; }
+            .flex-1 { animation: slideInRight 0.7s ease-out 0.3s backwards; }
+            ul li { animation: fadeInUp 0.5s ease-out backwards; transition: all 0.3s ease; }
+            ul li:nth-child(1) { animation-delay: 0.35s; }
+            ul li:nth-child(2) { animation-delay: 0.4s; }
+            ul li:hover { transform: translateX(5px); }
+            a { transition: all 0.3s ease; }
+            a:hover { transform: scale(1.05); }
+            li span { animation: scaleIn 0.6s ease-out; }
+        </style>
         <header class="w-full lg:max-w-4xl max-w-[335px] text-sm mb-6 not-has-[nav]:hidden">
             @if (Route::has('login'))
                 <nav class="flex items-center justify-end gap-4">
