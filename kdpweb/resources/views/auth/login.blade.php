@@ -366,7 +366,7 @@
 
             <section class="auth-panel">
                 <div class="top-nav">
-                    <span class="title"><i class="fa-solid fa-table-columns"></i> Dashboard</span>
+                    <span class="title"><i class="fa-solid fa-right-to-bracket"></i> Sign In</span>
                     <div class="form-tabs">
                         <button class="active" type="button" data-panel-button="admin-login">Admin Login</button>
                         <button type="button" data-panel-button="student-register">Student Register</button>
