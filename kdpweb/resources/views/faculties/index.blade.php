@@ -72,7 +72,21 @@
     @endif
 
     <section class="panel-card">
-        <form action="{{ $editingFaculty ? route('faculties.update', $editingFaculty) : route('faculties.store') }}" method="POST" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;align-items:end;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+            <div>
+                <h2 style="margin:0 0 0.25rem 0;font-size:1.1rem;color:#0f172a;">Admin</h2>
+                <p style="margin:0;color:#64748b;">Manage faculty records from here.</p>
+            </div>
+            <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+                <button type="submit" form="faculty-form" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#1f3c88;color:white;font:inherit;font-weight:700;cursor:pointer;">Add Faculty</button>
+                <button type="button" onclick="window.location.href='{{ route('faculties.index') }}'" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#64748b;color:white;font:inherit;font-weight:700;cursor:pointer;">Edit Faculty</button>
+                <button type="button" onclick="window.location.href='{{ route('faculties.index') }}'" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#334155;color:white;font:inherit;font-weight:700;cursor:pointer;">Delete Faculty</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="panel-card">
+        <form id="faculty-form" action="{{ $editingFaculty ? route('faculties.update', $editingFaculty) : route('faculties.store') }}" method="POST" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem;align-items:end;">
             @csrf
             @if ($editingFaculty)
                 @method('PATCH')

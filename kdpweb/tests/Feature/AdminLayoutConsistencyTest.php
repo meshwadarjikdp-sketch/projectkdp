@@ -24,9 +24,14 @@ it('shows the admin sidebar and consistent layout across protected management pa
 
     $facultiesPage = $this->actingAs($admin)->get('/faculties');
     $facultiesPage->assertStatus(200)
-        ->assertSee('Manage Department')
         ->assertSee('Manage Faculty')
-        ->assertSee('Notification Management');
+        ->assertSee('Faculty name')
+        ->assertSee('Faculty ID')
+        ->assertSee('Department')
+        ->assertSee('Email')
+        ->assertSee('Password')
+        ->assertSee('Subject')
+        ->assertSee('Availability');
 
     $notificationsPage = $this->actingAs($admin)->get('/notifications');
     $notificationsPage->assertStatus(200)
