@@ -24,5 +24,13 @@ it('creates an admin profile on admin login and shows dashboard options', functi
 
     $dashboard = $this->actingAs($admin)->get('/dashboard');
     $dashboard->assertStatus(200)
-        ->assertSee('Welcome Admin');
+        ->assertSee('Welcome Admin')
+        ->assertDontSee('Attendance %')
+        ->assertDontSee('Attendance Report')
+        ->assertDontSee('Student Attendance');
+
+    $reports = $this->actingAs($admin)->get('/reports');
+    $reports->assertStatus(200)
+        ->assertDontSee('Attendance Report')
+        ->assertDontSee('Student Attendance');
 });

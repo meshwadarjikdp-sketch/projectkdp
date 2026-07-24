@@ -54,10 +54,6 @@
                 <div class="value">{{ $stats['classes'] ?? 0 }}</div>
             </div>
             <div class="stat-card">
-                <div class="label">Attendance %</div>
-                <div class="value">{{ $stats['attendance'] ?? 0 }}%</div>
-            </div>
-            <div class="stat-card">
                 <div class="label">Notifications</div>
                 <div class="value">{{ $stats['notifications'] ?? 0 }}</div>
             </div>
@@ -68,9 +64,7 @@
         <div class="section-title">⚡ Quick Access</div>
         <div class="report-grid">
             <div class="report-card"><strong>Faculty Workload</strong><span>Track faculty teaching and load distribution.</span></div>
-            <div class="report-card"><strong>Attendance Report</strong><span>View attendance summaries across courses and departments.</span></div>
             <div class="report-card"><strong>Classroom Utilization</strong><span>Review occupancy trends and available rooms.</span></div>
-            <div class="report-card"><strong>Student Attendance</strong><span>Monitor participation levels by student group.</span></div>
             <div class="report-card"><strong>Timetable Report</strong><span>Inspect schedule coverage and class planning.</span></div>
             <div class="report-card"><strong>Department Report</strong><span>Summarize department activity and performance.</span></div>
         </div>
