@@ -7,6 +7,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\SetupController;
+use App\Http\Controllers\SubjectController;
 use App\Models\Classroom;
 use App\Models\Department;
 use App\Models\Faculty;
@@ -33,6 +34,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('departments', DepartmentController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource('faculties', FacultyController::class);
     Route::resource('classrooms', ClassroomController::class);
+    Route::resource('subjects', SubjectController::class);
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications', [NotificationController::class, 'store'])->name('notifications.store');
 
