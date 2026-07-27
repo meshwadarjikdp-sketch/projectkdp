@@ -104,7 +104,7 @@
                 <select id="department_id" name="department_id" required style="width:100%;border:1px solid #cbd5e1;border-radius:7px;padding:0.7rem 0.8rem;font:inherit;">
                     <option value="">Select department</option>
                     @foreach ($departmentOptions as $departmentOption)
-                        <option value="{{ $departmentOption }}" {{ old('department_id', $editingFaculty?->department?->department_name) == $departmentOption ? 'selected' : '' }}>{{ $departmentOption }}</option>
+                        <option value="{{ $departmentOption->id }}" {{ old('department_id', $editingFaculty?->department_id ?? $selectedDepartment?->id) == $departmentOption->id ? 'selected' : '' }}>{{ $departmentOption->department_name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -133,41 +133,64 @@
         </form>
     </section>
 
-    <section class="panel-card" style="overflow-x:auto;">
-        <table style="width:100%;border-collapse:collapse;min-width:900px;">
-            <thead>
-                <tr>
-                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Faculty name</th>
-                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Faculty ID</th>
-                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Department</th>
-                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Email</th>
-                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Subject</th>
-                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Availability</th>
-                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($faculties as $faculty)
-                    <tr>
-                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $faculty->faculty_name }}</td>
-                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $faculty->faculty_id }}</td>
-                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $faculty->department?->department_name }}</td>
-                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $faculty->email }}</td>
-                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $faculty->subject }}</td>
-                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $faculty->availability }}</td>
-                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">
-                            <div style="display:flex;gap:0.5rem;">
-                                <a href="{{ route('faculties.index', ['edit' => $faculty->id]) }}"><button type="button" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#64748b;color:white;font:inherit;font-weight:700;cursor:pointer;">Edit</button></a>
-                                <form action="{{ route('faculties.destroy', $faculty) }}" method="POST" onsubmit="return confirm('Delete this faculty?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#1f3c88;color:white;font:inherit;font-weight:700;cursor:pointer;">Delete</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
+    <section class="panel-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+            <div>
+                <h2 style="margin:0 0 0.25rem 0;font-size:1.1rem;color:#0f172a;">Department-wise Faculty</h2>
+                <p style="margin:0;color:#64748b;">Each department now has its own faculty section.</p>
+            </div>
+        </div>
+
+        @foreach ($departmentGroups as $departmentGroup)
+            <div style="margin-bottom:1.5rem;border:1px solid #e2e8f0;border-radius:12px;padding:1rem;background:#f8fafc;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+                    <div>
+                        <h3 style="margin:0;font-size:1rem;color:#0f172a;">{{ $departmentGroup->department_name }}</h3>
+                        <p style="margin:0.25rem 0 0;color:#64748b;">{{ $departmentGroup->faculties->count() }} faculty members</p>
+                    </div>
+                    <a href="{{ route('faculties.index', ['department_id' => $departmentGroup->id]) }}" style="display:inline-block;border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#1f3c88;color:white;font:inherit;font-weight:700;cursor:pointer;text-decoration:none;">Add faculty to this department</a>
+                </div>
+
+                @if ($departmentGroup->faculties->isEmpty())
+                    <div style="padding:1rem;background:white;border:1px dashed #cbd5e1;border-radius:8px;color:#64748b;">No faculty added for this department yet.</div>
+                @else
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%;border-collapse:collapse;min-width:900px;">
+                            <thead>
+                                <tr>
+                                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Faculty name</th>
+                                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Faculty ID</th>
+                                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Email</th>
+                                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Subject</th>
+                                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Availability</th>
+                                    <th style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;background:#f8fafc;color:#475569;font-size:0.8rem;letter-spacing:0.04em;text-transform:uppercase;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($departmentGroup->faculties as $faculty)
+                                    <tr>
+                                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $faculty->faculty_name }}</td>
+                                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $faculty->faculty_id }}</td>
+                                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $faculty->email }}</td>
+                                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $faculty->subject }}</td>
+                                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">{{ $faculty->availability }}</td>
+                                        <td style="padding:0.9rem 1rem;text-align:left;border-bottom:1px solid #e5e7eb;">
+                                            <div style="display:flex;gap:0.5rem;">
+                                                <a href="{{ route('faculties.index', ['edit' => $faculty->id]) }}"><button type="button" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#64748b;color:white;font:inherit;font-weight:700;cursor:pointer;">Edit</button></a>
+                                                <form action="{{ route('faculties.destroy', $faculty) }}" method="POST" onsubmit="return confirm('Delete this faculty?');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" style="border:0;border-radius:7px;padding:0.7rem 0.9rem;background:#1f3c88;color:white;font:inherit;font-weight:700;cursor:pointer;">Delete</button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+        @endforeach
     </section>
 @endsection
