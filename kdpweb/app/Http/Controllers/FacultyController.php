@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use App\Models\Faculty;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -18,14 +19,18 @@ class FacultyController extends Controller
             ? Faculty::query()->findOrFail((int) $request->query('edit'))
             : null;
 
-        $faculties = Faculty::query()
-            ->with('department')
-            ->orderBy('faculty_name')
+        $departmentId = $request->query('department_id');
+        $departmentGroups = Department::query()
+            ->with(['faculties' => function ($query): void {
+                $query->orderBy('faculty_name');
+            }])
+            ->orderBy('department_name')
             ->get();
 
         $departmentOptions = $this->departmentOptions();
+        $selectedDepartment = $departmentId ? Department::query()->find((int) $departmentId) : null;
 
-        return view('faculties.index', compact('faculties', 'departmentOptions', 'editingFaculty'));
+        return view('faculties.index', compact('departmentGroups', 'departmentOptions', 'editingFaculty', 'selectedDepartment'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -80,12 +85,11 @@ class FacultyController extends Controller
         return to_route('faculties.index')->with('success', 'Faculty deleted successfully.');
     }
 
-    private function departmentOptions(): array
+    private function departmentOptions(): Collection
     {
         return Department::query()
             ->orderBy('department_name')
-            ->pluck('department_name')
-            ->toArray();
+            ->get(['id', 'department_name']);
     }
 
     private function resolveDepartmentId(mixed $departmentIdentifier): int

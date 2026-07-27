@@ -5,6 +5,31 @@ use App\Models\Faculty;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
+it('shows faculty grouped by department on the management page', function () {
+    $admin = User::factory()->create();
+    $department = Department::create([
+        'department_code' => 'CE',
+        'department_name' => 'Computer Engineering',
+        'hod_name' => 'Dr. Jane Smith',
+    ]);
+
+    Faculty::create([
+        'faculty_name' => 'Dr. Jane Doe',
+        'faculty_id' => 'FAC-010',
+        'department_id' => $department->id,
+        'email' => 'jane@example.com',
+        'password' => Hash::make('secret123'),
+        'subject' => 'AI',
+        'availability' => 'Mon 09:00-11:00',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('faculties.index'))
+        ->assertOk()
+        ->assertSee('Computer Engineering')
+        ->assertSee('Add faculty to this department');
+});
+
 it('allows an authenticated admin to create, update, and delete faculties', function () {
     $admin = User::factory()->create();
     Department::create([

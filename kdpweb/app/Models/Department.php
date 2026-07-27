@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['department_code', 'department_name', 'hod_name'])]
 class Department extends Model
@@ -15,5 +16,10 @@ class Department extends Model
     public static function shared(): Builder
     {
         return static::query()->withoutGlobalScopes();
+    }
+
+    public function faculties(): HasMany
+    {
+        return $this->hasMany(Faculty::class);
     }
 }
