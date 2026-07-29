@@ -26,6 +26,11 @@
         .stat-value { font-size: 1.25rem; font-weight: 800; color: #111827; }
         .glass-card { background: white; border-radius: 18px; box-shadow: 0 10px 28px rgba(15,23,42,0.08); padding: 1.15rem; }
         .filters-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.9rem; align-items: end; }
+        .folders-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+        .folder-card { border: 1px solid #e2e8f0; border-radius: 16px; padding: 1rem; background: #f8fafc; }
+        .folder-card h4 { margin: 0 0 0.6rem; color: #0f172a; }
+        .folder-list { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+        .folder-pill { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.55rem 0.8rem; border-radius: 999px; background: white; color: #1d4ed8; font-weight: 700; border: 1px solid #dbeafe; }
         .field { display: flex; flex-direction: column; gap: 0.4rem; }
         .field label { font-size: 0.8rem; font-weight: 700; color: #475569; }
         .field input, .field select { border: 1px solid #cbd5e1; border-radius: 10px; padding: 0.72rem 0.8rem; font: inherit; color: #0f172a; }
@@ -56,7 +61,7 @@
         .empty-state { text-align: center; padding: 2.5rem 1rem; color: #64748b; }
         .empty-state .emoji { font-size: 2rem; display: block; margin-bottom: 0.6rem; }
         .pill { display: inline-flex; padding: 0.35rem 0.6rem; border-radius: 999px; background: #eff6ff; color: #1d4ed8; font-weight: 700; font-size: 0.8rem; }
-        @media (max-width: 1100px) { .filters-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 1100px) { .filters-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .folders-grid { grid-template-columns: 1fr; } }
         @media (max-width: 720px) { .hero-card { flex-direction: column; align-items: flex-start; } .stats-grid, .filters-grid, .form-grid { grid-template-columns: 1fr; } }
     </style>
 
@@ -134,18 +139,9 @@
                     <label for="semester">Semester</label>
                     <select id="semester" name="semester">
                         <option value="">All semesters</option>
-                        @for ($i = 1; $i <= 8; $i++)
+                        @for ($i = 1; $i <= 6; $i++)
                             <option value="{{ $i }}" {{ request('semester') == (string) $i ? 'selected' : '' }}>{{ $i }}</option>
                         @endfor
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="faculty_id">Faculty</label>
-                    <select id="faculty_id" name="faculty_id">
-                        <option value="">All faculties</option>
-                        @foreach ($faculties as $faculty)
-                            <option value="{{ $faculty->id }}" {{ request('faculty_id') == $faculty->id ? 'selected' : '' }}>{{ $faculty->faculty_name }}</option>
-                        @endforeach
                     </select>
                 </div>
                 <div class="field">
@@ -175,6 +171,24 @@
                 </div>
             </div>
 
+            <div style="margin-bottom:0.75rem;">
+                <h4 style="margin:0 0 0.5rem;color:#0f172a;">Department folders</h4>
+                <p style="margin:0;color:#64748b;">Each department folder contains its own semester folders.</p>
+            </div>
+            <div class="folders-grid" style="margin-bottom:1rem;">
+                @foreach ($departments as $department)
+                    <div class="folder-card">
+                        <h4>📁 {{ $department->department_name }}</h4>
+                        <div class="folder-list" style="margin-top:0.5rem;">
+                            <a class="folder-pill" href="{{ route('subjects.index', ['department_id' => $department->id]) }}" style="text-decoration:none;">📂 All Semesters</a>
+                            @for ($i = 1; $i <= 6; $i++)
+                                <a class="folder-pill" href="{{ route('subjects.index', ['department_id' => $department->id, 'semester' => $i]) }}" style="text-decoration:none;">📂 Semester {{ $i }}</a>
+                            @endfor
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
             <form action="{{ route('subjects.store') }}" method="POST" class="form-grid">
                 @csrf
                 <div class="field">
@@ -198,18 +212,9 @@
                     <label for="semester">Semester</label>
                     <select id="semester" name="semester" required>
                         <option value="">Select semester</option>
-                        @for ($i = 1; $i <= 8; $i++)
+                        @for ($i = 1; $i <= 6; $i++)
                             <option value="{{ $i }}" {{ old('semester') == (string) $i ? 'selected' : '' }}>{{ $i }}</option>
                         @endfor
-                    </select>
-                </div>
-                <div class="field">
-                    <label for="faculty_id">Faculty</label>
-                    <select id="faculty_id" name="faculty_id" required>
-                        <option value="">Select faculty</option>
-                        @foreach ($faculties as $faculty)
-                            <option value="{{ $faculty->id }}" {{ old('faculty_id') == $faculty->id ? 'selected' : '' }}>{{ $faculty->faculty_name }}</option>
-                        @endforeach
                     </select>
                 </div>
                 <div class="field">

@@ -79,3 +79,42 @@ it('allows an authenticated admin to create, update, and delete subjects', funct
 
     $this->assertDatabaseMissing('subjects', ['id' => $subject->id]);
 });
+
+it('stores subjects without faculty and shows department and semester folders for the subject directory', function () {
+    $admin = User::factory()->create();
+    $department = Department::create([
+        'department_code' => 'ECE',
+        'department_name' => 'Electronics',
+        'hod_name' => 'Dr. Jane Smith',
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('subjects.store'), [
+            'subject_code' => 'EC201',
+            'subject_name' => 'Signals',
+            'department_id' => $department->id,
+            'semester' => 6,
+            'credits' => 3,
+            'hours_per_week' => 4,
+            'subject_type' => 'Theory',
+            'elective' => 0,
+            'status' => 'Active',
+        ])
+        ->assertRedirect(route('subjects.index'))
+        ->assertSessionHas('success', 'Subject added successfully.');
+
+    $this->assertDatabaseHas('subjects', [
+        'subject_code' => 'EC201',
+        'department_id' => $department->id,
+        'semester' => 6,
+        'faculty_id' => null,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('subjects.index'))
+        ->assertOk()
+        ->assertSee('Department folders')
+        ->assertSee('Semester 6')
+        ->assertDontSee('value="7"')
+        ->assertDontSee('value="8"');
+});
