@@ -35,6 +35,12 @@ Route::middleware('auth')->group(function () {
     Route::resource('faculties', FacultyController::class);
     Route::resource('classrooms', ClassroomController::class);
     Route::resource('subjects', SubjectController::class);
+    
+    Route::get('/timetables/generate', [TimetableController::class, 'create'])->name('timetables.create');
+    Route::post('/timetables/generate', [TimetableController::class, 'generate'])->name('timetables.generate');
+    Route::get('/timetables/view', [TimetableController::class, 'show'])->name('timetables.show');
+    Route::post('/timetables/export', [TimetableController::class, 'exportCsv'])->name('timetables.exportCsv');
+    
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications', [NotificationController::class, 'store'])->name('notifications.store');
 
