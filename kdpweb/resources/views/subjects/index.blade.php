@@ -307,8 +307,8 @@
                                     </td>
                                     <td>
                                         <div class="action-group">
-                                            <button class="icon-btn" type="button">View</button>
-                                            <button class="icon-btn" type="button">Edit</button>
+                                            <a class="icon-btn" href="{{ route('subjects.show', $subject) }}">View</a>
+                                            <a class="icon-btn" href="{{ route('subjects.edit', $subject) }}">Edit</a>
                                             <form action="{{ route('subjects.destroy', $subject) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this subject?');">
                                                 @csrf
                                                 @method('DELETE')

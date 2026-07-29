@@ -56,6 +56,19 @@ class SubjectController extends Controller
         return view('subjects.index', compact('subjects', 'departments', 'faculties', 'stats'));
     }
 
+    public function show(Subject $subject): View
+    {
+        $subject->load(['department', 'faculty']);
+        return view('subjects.show', compact('subject'));
+    }
+
+    public function edit(Subject $subject): View
+    {
+        $departments = Department::orderBy('department_name')->get();
+        $faculties = Faculty::orderBy('faculty_name')->get();
+        return view('subjects.edit', compact('subject', 'departments', 'faculties'));
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
