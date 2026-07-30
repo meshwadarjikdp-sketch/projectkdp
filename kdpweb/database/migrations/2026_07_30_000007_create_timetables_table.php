@@ -21,7 +21,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('slot_number');
             $table->timestamps();
 
-            $table->unique(['department_id', 'semester', 'division', 'academic_year', 'day_of_week', 'slot_number', 'classroom_id'], 'timetable_slot_classroom_unique');
+           // $table->unique(['department_id', 'semester', 'division', 'academic_year', 'day_of_week', 'slot_number', 'classroom_id'], 'timetable_slot_classroom_unique');
         });
     }
 
