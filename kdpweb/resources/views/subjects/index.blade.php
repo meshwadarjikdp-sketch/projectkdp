@@ -209,6 +209,15 @@
                     </select>
                 </div>
                 <div class="field">
+                    <label for="faculty_id">Assign Faculty</label>
+                    <select id="faculty_id" name="faculty_id">
+                        <option value="">Select faculty member</option>
+                        @foreach ($faculties as $faculty)
+                            <option value="{{ $faculty->id }}" data-department-id="{{ $faculty->department_id }}" {{ old('faculty_id') == $faculty->id ? 'selected' : '' }}>{{ $faculty->faculty_name }} ({{ $faculty->department?->department_name }})</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="field">
                     <label for="semester">Semester</label>
                     <select id="semester" name="semester" required>
                         <option value="">Select semester</option>
@@ -324,4 +333,34 @@
             </div>
         </section>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const departmentSelect = document.getElementById('department_id');
+            const facultySelect = document.getElementById('faculty_id');
+
+            if (!departmentSelect || !facultySelect) {
+                return;
+            }
+
+            const facultyOptions = Array.from(facultySelect.querySelectorAll('option'));
+
+            const filterFaculty = () => {
+                const selectedDepartment = departmentSelect.value;
+                facultySelect.innerHTML = '';
+                facultySelect.appendChild(new Option('Select faculty member', ''));
+
+                facultyOptions.forEach(option => {
+                    const deptId = option.dataset.departmentId;
+
+                    if (!selectedDepartment || deptId === selectedDepartment) {
+                        facultySelect.appendChild(option.cloneNode(true));
+                    }
+                });
+            };
+
+            departmentSelect.addEventListener('change', filterFaculty);
+            filterFaculty();
+        });
+    </script>
 @endsection

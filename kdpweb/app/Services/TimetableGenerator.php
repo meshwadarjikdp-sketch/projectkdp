@@ -12,6 +12,9 @@ class TimetableGenerator
     protected $days = [];
     protected $totalSlots = 6;
     protected $lunchSlot = 4;
+    protected $lectureSlots = [];
+    protected $labSlots = [];
+    protected $maxDailyLoad = 4;
     
     // Global trackers to prevent cross-division clashes
     protected $facultySchedule = [];
@@ -21,11 +24,13 @@ class TimetableGenerator
     // Local trackers for the current generation
     protected $subjectDayTracker = [];
 
-    public function generate($departmentId, $semester, $division, $academicYear, $workingDays, $totalSlots, $lunchSlot, $strictWorkload = true, $continuousLabs = true, $noConsecutive = true)
+    public function generate($departmentId, $semester, $division, $academicYear, $workingDays, $totalSlots, $lunchSlot, $lectureSlots = [], $labSlots = [], $strictWorkload = true, $continuousLabs = true, $noConsecutive = true)
     {
         $this->days = $workingDays;
         $this->totalSlots = $totalSlots;
         $this->lunchSlot = $lunchSlot;
+        $this->lectureSlots = array_values(array_unique(array_filter($lectureSlots, fn($slot) => is_numeric($slot))));
+        $this->labSlots = array_values(array_unique(array_filter($labSlots, fn($slot) => is_numeric($slot))));
         
         // 1. Delete previous timetable for this specific division
         Timetable::where('department_id', $departmentId)
@@ -46,6 +51,10 @@ class TimetableGenerator
         }
 
         foreach ($subjects as $subject) {
+            if (! $subject->faculty_id) {
+                return ['success' => false, 'message' => "Generation Failed: Subject {$subject->subject_name} must have an assigned faculty member."];
+            }
+
             if ($subject->faculty && $subject->faculty->department_id != $departmentId) {
                 return ['success' => false, 'message' => "Generation Failed: Faculty {$subject->faculty->faculty_name} does not belong to the selected department."];
             }
@@ -77,7 +86,7 @@ class TimetableGenerator
             }
         }
 
-        return ['success' => false, 'message' => 'Generation Failed: Could not find a conflict-free combination that satisfies all strict constraints (Max 2 hrs/day, 1 hr/day theory). Try increasing working days or adding more faculty/rooms.'];
+        return ['success' => false, 'message' => 'Generation Failed: Could not find a conflict-free timetable under the configured constraints. Please verify faculty assignments, available rooms, working days, and slot settings.'];
     }
 
     protected function attemptGeneration($subjects, $theoryRooms, $labRooms, $departmentId, $semester, $division, $academicYear)
@@ -92,14 +101,15 @@ class TimetableGenerator
             $isLab = stripos($subject->subject_type, 'Lab') !== false;
             $rooms = $isLab ? $labRooms : $theoryRooms;
             
-            // For theory, it must be 1 hour exactly per day (Rule 6)
-            // For lab, it must be exactly one continuous 2 hour slot (Rule 7)
-            $slotsNeededPerSession = $isLab ? 2 : 1;
-            $sessionsNeeded = $isLab ? ($hoursToSchedule / 2) : $hoursToSchedule;
-            
-            if ($isLab && $hoursToSchedule % 2 != 0) {
-                // Invalid lab hours
-                return false;
+            if ($isLab) {
+                if ($hoursToSchedule % 2 !== 0) {
+                    return false;
+                }
+                $slotsNeededPerSession = 2;
+                $sessionsNeeded = 1;
+            } else {
+                $slotsNeededPerSession = 1;
+                $sessionsNeeded = $hoursToSchedule;
             }
 
             for ($session = 0; $session < $sessionsNeeded; $session++) {
@@ -124,12 +134,17 @@ class TimetableGenerator
                         if ($assigned) break;
                         
                         // Check valid slot ranges
-                        if ($slot == $this->lunchSlot) continue;
-                        if ($slotsNeededPerSession > 1 && ($slot == $this->totalSlots || $slot == ($this->lunchSlot - 1))) {
-                            continue; 
+                        if ($slot == $this->lunchSlot) {
+                            continue;
                         }
 
-                        if ($this->canSchedule($subject, $day, $slot, $rooms, $slotsNeededPerSession)) {
+                        if ($slotsNeededPerSession > 1) {
+                            if ($slot == $this->totalSlots || $slot == ($this->lunchSlot - 1)) {
+                                continue;
+                            }
+                        }
+
+                        if ($this->isSlotAllowedForSubject($subject, $slot) && $this->canSchedule($subject, $day, $slot, $rooms, $slotsNeededPerSession)) {
                             $roomId = $this->findAvailableRoom($day, $slot, $rooms, $slotsNeededPerSession);
                             
                             if ($roomId) {
@@ -202,9 +217,9 @@ class TimetableGenerator
     {
         $facultyId = $subject->faculty_id;
 
-        // Rule 9: Maximum Faculty teaching load per day = 2 Hours
+        // Rule 6: Maximum Faculty teaching load per day = 4 Hours
         $currentLoad = $this->facultyDailyLoad[$facultyId][$day] ?? 0;
-        if ($currentLoad + $slotsNeeded > 2) {
+        if ($currentLoad + $slotsNeeded > $this->maxDailyLoad) {
             return false;
         }
 
@@ -224,6 +239,15 @@ class TimetableGenerator
         }
 
         return true;
+    }
+
+    protected function isSlotAllowedForSubject($subject, $slot)
+    {
+        if (stripos($subject->subject_type, 'Lab') !== false) {
+            return empty($this->labSlots) || in_array($slot, $this->labSlots, true);
+        }
+
+        return empty($this->lectureSlots) || in_array($slot, $this->lectureSlots, true);
     }
 
     protected function findAvailableRoom($day, $slot, $rooms, $slotsNeeded)

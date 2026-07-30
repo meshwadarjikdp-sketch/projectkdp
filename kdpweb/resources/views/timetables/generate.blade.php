@@ -124,6 +124,24 @@
                                 <label class="form-label">Lunch Break Slot Index (Fixed)</label>
                                 <input type="number" name="lunch_slot" class="form-control" value="{{ old('lunch_slot', 4) }}" min="1" max="10" required>
                             </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Lecture Time Slots</label>
+                                <select name="lecture_slots[]" class="form-select" multiple size="4">
+                                    @for ($i = 1; $i <= 10; $i++)
+                                        <option value="{{ $i }}" {{ in_array($i, old('lecture_slots', [])) ? 'selected' : '' }}>Slot {{ $i }}</option>
+                                    @endfor
+                                </select>
+                                <small class="text-muted">Hold Ctrl/Cmd to select multiple lecture slots.</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Laboratory Time Slots</label>
+                                <select name="lab_slots[]" class="form-select" multiple size="4">
+                                    @for ($i = 1; $i <= 10; $i++)
+                                        <option value="{{ $i }}" {{ in_array($i, old('lab_slots', [])) ? 'selected' : '' }}>Slot {{ $i }}</option>
+                                    @endfor
+                                </select>
+                                <small class="text-muted">Choose the one-hour starting slots for lab sessions.</small>
+                            </div>
                             <div class="col-md-12">
                                 <label class="form-label">Working Days</label><br>
                                 @php $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']; @endphp
@@ -134,6 +152,12 @@
                                         <label class="form-check-label" for="day_{{ $day }}">{{ substr($day, 0, 3) }}</label>
                                     </div>
                                 @endforeach
+                            </div>
+                            <div class="col-md-12">
+                                <div id="previewPanel" class="card card-modern p-3 mt-3" style="display:none;">
+                                    <h6 class="mb-2">Selected Department / Semester Preview</h6>
+                                    <div id="previewContent" class="small text-muted">Select a department and semester to load subject, faculty, and classroom summary.</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -177,5 +201,58 @@
             document.getElementById('loadingOverlay').style.display = 'flex';
         }
     }
-</script>
-@endsection
+
+    function fetchPreview() {
+        const departmentId = document.querySelector('select[name="department_id"]').value;
+        const semester = document.querySelector('select[name="semester"]').value;
+        const previewPanel = document.getElementById('previewPanel');
+        const previewContent = document.getElementById('previewContent');
+
+        if (!departmentId || !semester) {
+            previewPanel.style.display = 'none';
+            return;
+        }
+
+        previewPanel.style.display = 'block';
+        previewContent.textContent = 'Loading preview...';
+
+        fetch(`{{ route('timetables.preview') }}?department_id=${departmentId}&semester=${semester}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                previewContent.innerHTML = `<span class="text-danger">${data.message}</span>`;
+                return;
+            }
+
+            const subjectRows = data.subjects.map(subject => `<li>${subject.subject_code} - ${subject.subject_name} (${subject.subject_type}, ${subject.hours_per_week}h) - ${subject.faculty_assigned ?? 'Unassigned'}</li>`).join('');
+            previewContent.innerHTML = `
+                <strong>Department:</strong> ${data.department}<br>
+                <strong>Subjects:</strong> ${data.subject_count} <br>
+                <strong>Faculty available:</strong> ${data.faculty_count} <br>
+                <strong>Theory rooms:</strong> ${data.theory_room_count} <br>
+                <strong>Lab rooms:</strong> ${data.lab_room_count} <br>
+                <div style="margin-top:0.75rem;"><strong>Subjects loaded:</strong></div>
+                <ul style="margin: 0.4rem 0 0 1rem;">${subjectRows}</ul>
+            `;
+        })
+        .catch(() => {
+            previewContent.innerHTML = '<span class="text-danger">Unable to load preview. Try again later.</span>';
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const departmentSelect = document.querySelector('select[name="department_id"]');
+        const semesterSelect = document.querySelector('select[name="semester"]');
+
+        if (departmentSelect && semesterSelect) {
+            departmentSelect.addEventListener('change', fetchPreview);
+            semesterSelect.addEventListener('change', fetchPreview);
+            fetchPreview();
+        }
+    });
