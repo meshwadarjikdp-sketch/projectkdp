@@ -84,6 +84,13 @@ class SubjectController extends Controller
             'status' => ['required', 'in:Active,Inactive'],
         ]);
 
+        if (!empty($validated['faculty_id'])) {
+            $faculty = Faculty::find($validated['faculty_id']);
+            if ($faculty && $faculty->department_id !== $validated['department_id']) {
+                return back()->withInput()->withErrors(['faculty_id' => 'Selected faculty must belong to the chosen department.']);
+            }
+        }
+
         Subject::create($validated + ['elective' => (bool) $request->boolean('elective')]);
 
         return to_route('subjects.index')->with('success', 'Subject added successfully.');
@@ -103,7 +110,12 @@ class SubjectController extends Controller
             'elective' => ['nullable', 'boolean'],
             'status' => ['required', 'in:Active,Inactive'],
         ]);
-
+        if (!empty($validated['faculty_id'])) {
+            $faculty = Faculty::find($validated['faculty_id']);
+            if ($faculty && $faculty->department_id !== $validated['department_id']) {
+                return back()->withInput()->withErrors(['faculty_id' => 'Selected faculty must belong to the chosen department.']);
+            }
+        }
         $subject->update($validated + ['elective' => (bool) $request->boolean('elective')]);
 
         return to_route('subjects.index')->with('success', 'Subject updated successfully.');

@@ -8,6 +8,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\TimetableController;
 use App\Models\Classroom;
 use App\Models\Department;
 use App\Models\Faculty;
@@ -37,9 +38,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('subjects', SubjectController::class);
     
     Route::get('/timetables/generate', [TimetableController::class, 'create'])->name('timetables.create');
+    Route::get('/timetables/preview', [TimetableController::class, 'preview'])->name('timetables.preview');
     Route::post('/timetables/generate', [TimetableController::class, 'generate'])->name('timetables.generate');
     Route::get('/timetables/view', [TimetableController::class, 'show'])->name('timetables.show');
     Route::post('/timetables/export', [TimetableController::class, 'exportCsv'])->name('timetables.exportCsv');
+    Route::post('/timetables/export-excel', [TimetableController::class, 'exportExcel'])->name('timetables.exportExcel');
     
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications', [NotificationController::class, 'store'])->name('notifications.store');
