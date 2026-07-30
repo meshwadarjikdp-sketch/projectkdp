@@ -486,7 +486,7 @@
                 <a href="{{ route('notifications.index') }}">Notification Management</a>
                 <a href="{{ route('reports.index') }}">Report Dashboard</a>
                 <a href="{{ route('subjects.index') }}">Manage Subjects</a>
-                <a href="#">Manage Students</a>
+                <a href="{{ route('students.index') }}">Manage Students</a>
                 <a href="{{ route('timetables.create') }}">Generate Timetable</a>
             </nav>
         </aside>

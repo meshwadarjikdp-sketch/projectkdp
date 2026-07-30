@@ -409,7 +409,7 @@
                         <div class="panel-content">
                             <h2>Student Register</h2>
                             <p>Create your student account with enrollment details and class information.</p>
-                            <form method="POST" action="/student/register" class="space-y-4">
+                            <form method="POST" action="{{ route('students.register') }}" class="space-y-4">
                                 @csrf
                                 <div class="form-group">
                                     <label for="student-name">Student Name</label>
@@ -437,6 +437,18 @@
                                             <option value="4">Semester 4</option>
                                             <option value="5">Semester 5</option>
                                             <option value="6">Semester 6</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="student-department">Department</label>
+                                    <div class="input-group">
+                                        <i class="fa-solid fa-building-columns"></i>
+                                        <select id="student-department" name="department_id" required>
+                                            <option value="">Select department</option>
+                                            @foreach (App\Models\Department::orderBy('department_name')->get() as $department)
+                                                <option value="{{ $department->id }}">{{ $department->department_name }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
                                 </div>
