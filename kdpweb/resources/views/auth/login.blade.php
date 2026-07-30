@@ -489,12 +489,18 @@
                         <div class="panel-content">
                             <h2>Student Login</h2>
                             <p>Login with your enrollment number and password to access your timetable.</p>
-                            <form method="POST" action="/student/login" class="space-y-4">
+                            <form method="POST" action="{{ route('student.login') }}" class="space-y-4">
+                                @csrf
+                                @if ($errors->has('enrollment_number'))
+                                    <div style="background:#fee2e2;color:#991b1b;border-left:4px solid #ef4444;padding:0.75rem 1rem;border-radius:8px;font-size:0.9rem;">
+                                        {{ $errors->first('enrollment_number') }}
+                                    </div>
+                                @endif
                                 <div class="form-group">
                                     <label for="student-login-enrollment">Enrollment Number</label>
                                     <div class="input-group">
                                         <i class="fa-solid fa-id-badge"></i>
-                                        <input id="student-login-enrollment" type="text" name="enrollment_number" placeholder="Enter enrollment number" required />
+                                        <input id="student-login-enrollment" type="text" name="enrollment_number" value="{{ old('enrollment_number') }}" placeholder="Enter enrollment number" required />
                                     </div>
                                 </div>
                                 <div class="form-group">

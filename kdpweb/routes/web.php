@@ -7,7 +7,9 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\SetupController;
+use App\Http\Controllers\StudentAuthController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentPortalController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TimetableController;
 use App\Models\Classroom;
@@ -31,6 +33,19 @@ Route::post('/student/register', [StudentController::class, 'register'])->name('
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+// Student Auth Routes
+Route::post('/student/login', [StudentAuthController::class, 'login'])->name('student.login');
+Route::post('/student/logout', [StudentAuthController::class, 'logout'])->name('student.logout');
+
+// Student Portal Routes (protected by student session)
+Route::middleware('student.auth')->prefix('student')->name('student.')->group(function () {
+    Route::get('/dashboard', [StudentPortalController::class, 'dashboard'])->name('dashboard');
+    Route::get('/timetable', [StudentPortalController::class, 'timetable'])->name('timetable');
+    Route::get('/notifications', [StudentPortalController::class, 'notifications'])->name('notifications');
+    Route::get('/profile', [StudentPortalController::class, 'profile'])->name('profile');
+    Route::post('/profile', [StudentPortalController::class, 'updateProfile'])->name('profile.update');
+});
 
 // Protected Routes (require authentication)
 Route::middleware('auth')->group(function () {
