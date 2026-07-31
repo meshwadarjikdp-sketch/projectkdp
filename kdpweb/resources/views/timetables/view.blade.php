@@ -4,16 +4,30 @@
 
 @section('content')
 <style>
-    .timetable-grid th { background-color: #1e3c72; color: #fff; text-align: center; font-weight: 500; }
-    .timetable-grid td { text-align: center; vertical-align: middle; padding: 10px; }
-    .slot-lunch { background-color: #f8d7da !important; font-weight: bold; color: #721c24; letter-spacing: 2px; }
-    .subject-box { background: #eef2f7; padding: 10px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid #1e3c72; margin-bottom: 5px; }
-    .subject-title { font-weight: bold; color: #1e3c72; font-size: 0.95rem; margin-bottom: 2px; }
-    .subject-meta { font-size: 0.85rem; color: #333; }
+    .timetable-wrapper { border: 1px solid #000; padding: 0; background: #fff; color: #000; margin-bottom: 20px; }
+    .timetable-header { text-align: center; padding: 10px; border-bottom: 1px solid #000; }
+    .timetable-header h3 { margin: 0; font-size: 18px; font-weight: bold; }
+    .timetable-header h4 { margin: 5px 0; font-size: 16px; font-weight: bold; }
+    .timetable-header h5 { margin: 0; font-size: 14px; font-weight: normal; }
+    .timetable-sub-header { display: flex; justify-content: space-between; padding: 10px 15px; font-size: 12px; font-weight: bold; }
+    .timetable-sub-header .right-info { text-align: right; font-size: 10px; font-weight: normal; }
+    .timetable-grid { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+    .timetable-grid th, .timetable-grid td { border: 1px solid #000; text-align: center; vertical-align: middle; padding: 5px; font-size: 12px; }
+    .timetable-grid th { font-weight: bold; text-transform: uppercase; }
+    .slot-lunch { font-weight: bold; letter-spacing: 2px; }
+    .entry-box { margin-bottom: 4px; }
+    .entry-box:last-child { margin-bottom: 0; }
+    .timetable-footer { padding: 15px; font-size: 12px; font-weight: bold; }
+    .timetable-footer-signature { margin-top: 40px; text-align: right; padding-right: 30px; }
+    
     @media print {
         .no-print { display: none !important; }
-        .timetable-grid th { color: #000 !important; background-color: #eee !important; -webkit-print-color-adjust: exact; }
-        .subject-box { border-left-color: #333 !important; }
+        body { background: #fff; }
+        .container-fluid { padding: 0 !important; }
+        .card { border: none !important; box-shadow: none !important; }
+        .timetable-wrapper { border: 2px solid #000; }
+        .timetable-grid th, .timetable-grid td { border: 1px solid #000 !important; }
+        @page { size: A4 landscape; margin: 10mm; }
     }
 </style>
 
@@ -133,64 +147,93 @@
             </div>
         </div>
 
-        <div class="card shadow border-0">
-            <div class="card-header bg-white py-3">
-                <h4 class="mb-0 text-center text-uppercase" style="color: #1e3c72; letter-spacing: 1px;">
-                    Timetable - Semester {{ $semester }} (Div {{ $division }})
-                </h4>
+        <div class="timetable-wrapper">
+            <div class="timetable-header">
+                <h3>K. D. Polytechnic, Patan</h3>
+                <h4>Time Table (Term: {{ $academicYear }})</h4>
+                <h5>Department of {{ App\Models\Department::find($departmentId)->department_name ?? 'Computer Engineering' }}</h5>
             </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-bordered timetable-grid mb-0">
-                        <thead>
-                            <tr>
-                                <th style="width: 10%;">Time / Day</th>
-                                @foreach($config->working_days as $day)
-                                    <th>{{ $day }}</th>
-                                @endforeach
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @for($slot = 1; $slot <= $config->total_slots; $slot++)
-                                <tr>
-                                    <th class="align-middle bg-light text-dark">Slot {{ $slot }}</th>
-                                    @foreach($config->working_days as $day)
-                                        @if($slot == $config->lunch_slot)
-                                            <td class="slot-lunch align-middle">LUNCH<br>BREAK</td>
-                                        @else
-                                            <td>
-                                                @php
-                                                    $entries = collect();
-                                                    if (isset($timetables[$day])) {
-                                                        $entries = $timetables[$day]->where('slot_number', $slot);
-                                                    }
-                                                @endphp
-                                                
-                                                @if($entries->isNotEmpty())
-                                                    @foreach($entries as $entry)
-                                                        <div class="subject-box">
-                                                            <div class="subject-title">{{ $entry->subject->subject_name }}</div>
-                                                            <div class="subject-meta">{{ $entry->faculty->faculty_name }}</div>
-                                                            <div class="subject-meta">{{ $entry->classroom->room_number }}</div>
-                                                            <div class="subject-meta fw-bold mt-1 text-primary">
-                                                                ({{ stripos($entry->subject->subject_type, 'Lab') !== false ? 'Lab' : 'Theory' }})
-                                                            </div>
-                                                        </div>
-                                                    @endforeach
-                                                @else
-                                                    <span class="text-muted small">-</span>
-                                                @endif
-                                            </td>
-                                        @endif
-                                    @endforeach
-                                </tr>
-                            @endfor
-                        </tbody>
-                    </table>
+            <div class="timetable-sub-header">
+                <div>
+                    Class: {{ $semester }}{{ $division }}
+                </div>
+                <div class="right-info">
+                    Term Dates: 24-JUL-2026 to 31-DEC-2026 (SEM-1)<br>
+                    13-JUL-2026 to 03-DEC-2026 (SEM-3)<br>
+                    15-JUN-2026 to 30-OCT-2026 (SEM-5)<br>
+                    WEF: 29-JUN-2026
                 </div>
             </div>
-            <div class="card-footer bg-white text-muted small text-center no-print">
-                Generated with Strict AI Constraints (Max 2 Hrs/Day Load, Continuous Labs)
+            <table class="timetable-grid">
+                <thead>
+                    <tr>
+                        <th style="width: 12%;">TIME</th>
+                        @foreach($config->working_days as $day)
+                            <th>{{ strtoupper($day) }}</th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @php
+                        $timeSlots = [
+                            1 => '08:30 - 09:30',
+                            2 => '09:30 - 10:30',
+                            3 => '10:30 - 11:30',
+                            4 => '11:30 - 12:30',
+                            5 => '01:00 - 02:00',
+                            6 => '02:00 - 03:00',
+                            7 => '03:10 - 04:10',
+                            8 => '04:10 - 05:10',
+                            9 => '05:10 - 06:10',
+                            10 => '06:10 - 07:10',
+                        ];
+                    @endphp
+                    @for($slot = 1; $slot <= $config->total_slots; $slot++)
+                        @if($slot == $config->lunch_slot)
+                            <tr>
+                                <th>{{ $timeSlots[$slot] ?? '12:30 - 01:00' }}</th>
+                                <td colspan="{{ count($config->working_days) }}" class="slot-lunch">RECESS</td>
+                            </tr>
+                        @else
+                            <tr>
+                                <th>{{ $timeSlots[$slot] ?? "Slot $slot" }}</th>
+                                @foreach($config->working_days as $day)
+                                    <td>
+                                        @php
+                                            $entries = collect();
+                                            if (isset($timetables[$day])) {
+                                                $entries = $timetables[$day]->where('slot_number', $slot);
+                                            }
+                                        @endphp
+                                        
+                                        @if($entries->isNotEmpty())
+                                            @foreach($entries as $index => $entry)
+                                                <div class="entry-box">
+                                                    {{ $entry->subject->subject_code ?? $entry->subject->subject_name }}-{{ $entry->faculty->faculty_name ?? 'N/A' }}-{{ $entry->classroom->room_number ?? 'N/A' }}
+                                                </div>
+                                            @endforeach
+                                        @endif
+                                    </td>
+                                @endforeach
+                            </tr>
+                        @endif
+                    @endfor
+                </tbody>
+            </table>
+            <div class="timetable-footer">
+                <div style="text-align: center; font-weight: normal;">^ = Tutorial</div>
+                <div style="margin-top: 10px;">Recess-1: 12:30 PM - 01:00 PM</div>
+                <div style="margin-bottom: 20px;">Recess-2: 03:00 PM - 03:10 PM</div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div style="border: 1px solid #000; padding: 5px; display: inline-block;">
+                        Skill Based Training: 15-JUN-2026 to 28-JUN-2026 (SEM-5)
+                    </div>
+                    <div class="timetable-footer-signature">
+                        HOD<br>
+                        Department of {{ App\Models\Department::find($departmentId)->department_name ?? 'Computer Engineering' }}
+                    </div>
+                </div>
             </div>
         </div>
     @else
