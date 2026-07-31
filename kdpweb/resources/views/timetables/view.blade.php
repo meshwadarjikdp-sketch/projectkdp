@@ -65,6 +65,74 @@
     </div>
 
     @if(count($timetables) > 0 && $config)
+        @php
+            $flatEntries = $timetables->flatten();
+            $theoryEntries = $flatEntries->filter(fn ($entry) => stripos($entry->subject->subject_type, 'Lab') === false);
+            $labEntries = $flatEntries->filter(fn ($entry) => stripos($entry->subject->subject_type, 'Lab') !== false);
+            $facultyLoadSummary = $flatEntries->groupBy('faculty_id')->map(function ($entries, $facultyId) {
+                $faculty = $entries->first()->faculty;
+
+                return [
+                    'name' => $faculty?->faculty_name ?? 'Unknown',
+                    'hours' => $entries->count(),
+                ];
+            })->values();
+        @endphp
+
+        <div class="card shadow-sm border-0 mb-4 no-print">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3"><i class="fas fa-chart-line text-primary me-2"></i> Generated Timetable Preview</h5>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="border rounded p-3 h-100">
+                            <div class="text-muted small">Total Entries</div>
+                            <div class="fw-bold fs-4">{{ $flatEntries->count() }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3 h-100">
+                            <div class="text-muted small">Theory Slots</div>
+                            <div class="fw-bold fs-4">{{ $theoryEntries->count() }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3 h-100">
+                            <div class="text-muted small">Lab Slots</div>
+                            <div class="fw-bold fs-4">{{ $labEntries->count() }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="border rounded p-3 h-100">
+                            <div class="text-muted small">Faculty Load Groups</div>
+                            <div class="fw-bold fs-4">{{ $facultyLoadSummary->count() }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h6 class="fw-bold mb-2">Predicted Faculty Load</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Faculty</th>
+                                    <th>Scheduled Hours</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($facultyLoadSummary as $load)
+                                    <tr>
+                                        <td>{{ $load['name'] }}</td>
+                                        <td>{{ $load['hours'] }} hrs</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card shadow border-0">
             <div class="card-header bg-white py-3">
                 <h4 class="mb-0 text-center text-uppercase" style="color: #1e3c72; letter-spacing: 1px;">
