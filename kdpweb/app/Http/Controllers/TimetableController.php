@@ -155,60 +155,110 @@ class TimetableController extends Controller
             'subject_classrooms.*' => ['nullable', 'exists:classrooms,id'],
         ]);
 
-        // 1. Update faculty assignments if provided in subject_faculties
-        $subjectFaculties = $request->input('subject_faculties', []);
-        foreach ($subjectFaculties as $subjectId => $facultyId) {
-            if ($facultyId) {
-                Subject::where('id', $subjectId)->update(['faculty_id' => $facultyId]);
+        try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
+            $subjectFaculties = $request->input('subject_faculties', []);
+            foreach ($subjectFaculties as $subjectId => $facultyId) {
+                if ($facultyId) {
+                    Subject::where('id', $subjectId)->update(['faculty_id' => $facultyId]);
+                }
             }
+
+            $unassignedSubjects = Subject::where('department_id', $validated['department_id'])
+                ->where('semester', $validated['semester'])
+                ->where('status', 'Active')
+                ->whereNull('faculty_id')
+                ->get();
+
+            if ($unassignedSubjects->isNotEmpty()) {
+                \Illuminate\Support\Facades\DB::rollBack();
+                $unassignedNames = $unassignedSubjects->pluck('subject_name')->join(', ');
+                return Response::json([
+                    'success' => false,
+                    'message' => "Missing Subject Mapping: The following subjects must have an assigned faculty member: {$unassignedNames}"
+                ], 422);
+            }
+
+            $subjectClassrooms = $request->input('subject_classrooms', []);
+            $lectureSlots = array_values(array_unique(array_filter($request->input('lecture_slots', []), fn ($slot) => is_numeric($slot))));
+            $labSlots = array_values(array_unique(array_filter($request->input('lab_slots', []), fn ($slot) => is_numeric($slot))));
+
+            if (in_array($validated['lunch_slot'], $labSlots, true)) {
+                \Illuminate\Support\Facades\DB::rollBack();
+                return Response::json([
+                    'success' => false,
+                    'message' => 'Invalid Hours: Lunch break cannot be selected as a laboratory slot.'
+                ], 422);
+            }
+
+            $result = $generator->generate(
+                $validated['department_id'],
+                $validated['semester'],
+                $validated['division'],
+                $validated['academic_year'],
+                $validated['working_days'],
+                $validated['total_slots'],
+                $validated['lunch_slot'],
+                $lectureSlots,
+                $labSlots,
+                true,
+                true,
+                true,
+                $subjectClassrooms
+            );
+
+            if (! $result['success']) {
+                \Illuminate\Support\Facades\DB::rollBack();
+                return Response::json([
+                    'success' => false,
+                    'message' => $result['message']
+                ], 422);
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+
+            // Fetch newly generated timetable to render the grid
+            $timetables = Timetable::with(['subject', 'faculty', 'classroom'])
+                ->where('department_id', $validated['department_id'])
+                ->where('semester', $validated['semester'])
+                ->where('division', $validated['division'])
+                ->where('academic_year', $validated['academic_year'])
+                ->orderBy('day_of_week')
+                ->orderBy('slot_number')
+                ->get()
+                ->groupBy('day_of_week');
+
+            $config = (object) [
+                'working_days' => $validated['working_days'],
+                'total_slots' => (int) $validated['total_slots'],
+                'lunch_slot' => (int) $validated['lunch_slot'],
+                'lab_slots' => $labSlots,
+            ];
+
+            $html = view('timetables.partials.timetable_grid', [
+                'timetables' => $timetables,
+                'config' => $config,
+                'academicYear' => $validated['academic_year'],
+                'departmentId' => $validated['department_id'],
+                'semester' => $validated['semester'],
+                'division' => $validated['division'],
+            ])->render();
+
+            return Response::json([
+                'success' => true,
+                'message' => $result['message'],
+                'data' => $timetables,
+                'html' => $html
+            ]);
+            
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            return Response::json([
+                'success' => false,
+                'message' => 'An unexpected error occurred during generation: ' . $e->getMessage()
+            ], 500);
         }
-
-        // 2. Validate that all active subjects for this department and semester have an assigned faculty member
-        $unassignedSubjects = Subject::where('department_id', $validated['department_id'])
-            ->where('semester', $validated['semester'])
-            ->where('status', 'Active')
-            ->whereNull('faculty_id')
-            ->get();
-
-        if ($unassignedSubjects->isNotEmpty()) {
-            $unassignedNames = $unassignedSubjects->pluck('subject_name')->join(', ');
-
-            return back()->withInput()->with('error', "Generation Failed: The following subjects must have an assigned faculty member: {$unassignedNames}");
-        }
-
-        $subjectClassrooms = $request->input('subject_classrooms', []);
-
-        $lectureSlots = array_values(array_unique(array_filter($request->input('lecture_slots', []), fn ($slot) => is_numeric($slot))));
-        $labSlots = array_values(array_unique(array_filter($request->input('lab_slots', []), fn ($slot) => is_numeric($slot))));
-
-        if (in_array($validated['lunch_slot'], $labSlots, true)) {
-            return back()->withInput()->with('error', 'Lunch break cannot be selected as a laboratory slot.');
-        }
-
-        $result = $generator->generate(
-            $validated['department_id'],
-            $validated['semester'],
-            $validated['division'],
-            $validated['academic_year'],
-            $validated['working_days'],
-            $validated['total_slots'],
-            $validated['lunch_slot'],
-            $lectureSlots,
-            $labSlots,
-            true,
-            true,
-            true,
-            $subjectClassrooms
-        );
-
-        if (! $result['success']) {
-            return back()->withInput()->with('error', $result['message']);
-        }
-
-        return redirect()->route('timetables.show', array_merge($validated, [
-            'working_days' => $validated['working_days'],
-            'lab_slots' => $labSlots,
-        ]))->with('success', $result['message']);
     }
 
     public function show(Request $request): View

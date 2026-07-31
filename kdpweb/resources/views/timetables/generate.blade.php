@@ -426,6 +426,11 @@
     </div>
     </form>
 
+    <div id="timetable-result-container" class="mt-4"></div>
+</div>
+@endsection
+
+@push('scripts')
 <script>
     // Minimal JS to handle toggling Sunday disabled state
     document.addEventListener('DOMContentLoaded', () => {
@@ -439,14 +444,14 @@
             });
         });
     });
-</script>
 
-<script>
     // JS for dynamic preview of subjects, faculties and classrooms
     document.addEventListener("DOMContentLoaded", () => {
         const deptSelect = document.getElementById('department_id');
         const semSelect = document.getElementById('semester');
         const container = document.getElementById('subject-mapping-container');
+        const form = document.getElementById('timetable-form');
+        const resultContainer = document.getElementById('timetable-result-container');
 
         function fetchPreviewData() {
             const deptId = deptSelect.value;
@@ -649,6 +654,74 @@
         if (deptSelect.value && semSelect.value) {
             fetchPreviewData();
         }
+
+        // AJAX Form Submission
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+            submitBtn.disabled = true;
+            resultContainer.innerHTML = '';
+            
+            // Clear old alerts
+            document.querySelectorAll('.alert-danger, .alert-success').forEach(el => el.remove());
+
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+
+                if (data.success) {
+                    const alertHtml = `
+                        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+                            <i class="fas fa-check-circle me-2"></i> ${data.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    form.insertAdjacentHTML('beforebegin', alertHtml);
+                    
+                    if (data.html) {
+                        resultContainer.innerHTML = data.html;
+                        // Scroll to results
+                        resultContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                } else {
+                    const alertHtml = `
+                        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i> ${data.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    `;
+                    form.insertAdjacentHTML('beforebegin', alertHtml);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            })
+            .catch(error => {
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+                
+                const alertHtml = `
+                    <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i> An unexpected error occurred. Please try again.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+                form.insertAdjacentHTML('beforebegin', alertHtml);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                console.error(error);
+            });
+        });
     });
 </script>
-@endsection
+@endpush

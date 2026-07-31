@@ -3,33 +3,31 @@
 namespace App\Services;
 
 use App\Models\Classroom;
+use App\Models\Faculty;
 use App\Models\Subject;
 use App\Models\Timetable;
 
 class TimetableGenerator
 {
     protected $days = [];
-
     protected $totalSlots = 6;
-
     protected $lunchSlot = 4;
-
     protected $lectureSlots = [];
-
     protected $labSlots = [];
-
-    protected $maxDailyLoad = 6;
+    
+    protected $maxDailyLoad = 4; // Max hours a faculty can teach per day
+    protected $maxStudentDailyLoad = 6; // Max hours a student can have per day
 
     // Global trackers to prevent cross-division clashes
     protected $facultySchedule = [];
-
     protected $roomSchedule = [];
-
     protected $facultyDailyLoad = [];
 
     // Local trackers for the current generation
     protected $subjectDayTracker = [];
-
+    protected $studentDailyLoad = [];
+    protected $lastScheduledSubject = []; // Track last subject for consecutive prevention
+    
     public function generate($departmentId, $semester, $division, $academicYear, $workingDays, $totalSlots, $lunchSlot, $lectureSlots = [], $labSlots = [], $strictWorkload = true, $continuousLabs = true, $noConsecutive = true, $subjectClassrooms = [])
     {
         $this->days = $workingDays;
@@ -45,7 +43,7 @@ class TimetableGenerator
             ->where('academic_year', $academicYear)
             ->delete();
 
-        // 2. Fetch Subjects and verify faculty department (Rule 2, 8, 18)
+        // 2. Fetch Subjects and verify faculty department
         $subjects = Subject::with('faculty')->where('department_id', $departmentId)
             ->where('semester', $semester)
             ->where('status', 'Active')
@@ -53,52 +51,71 @@ class TimetableGenerator
             ->get();
 
         if ($subjects->isEmpty()) {
-            return ['success' => false, 'message' => 'Generation Failed: No subjects found.'];
+            return ['success' => false, 'message' => 'Missing Subject Mapping: No subjects found for this department and semester.'];
         }
 
         foreach ($subjects as $subject) {
             if (! $subject->faculty_id) {
-                return ['success' => false, 'message' => "Generation Failed: Subject {$subject->subject_name} must have an assigned faculty member."];
-            }
-
-            if ($subject->faculty && $subject->faculty->department_id != $departmentId) {
-                return ['success' => false, 'message' => "Generation Failed: Faculty {$subject->faculty->faculty_name} does not belong to the selected department."];
+                return ['success' => false, 'message' => "Missing Subject Mapping: Subject {$subject->subject_name} must have an assigned faculty member."];
             }
         }
 
-        // 3. Fetch Classrooms (Rule 12)
-        $theoryRooms = Classroom::where(function ($query) {
-            $query->where('room_type', 'like', '%Lecture%')
-                ->orWhere('room_type', 'like', '%Theory%')
-                ->orWhere('room_type', 'Classroom');
-        })
-            ->where('availability', 'Available')
-            ->get();
+        $allFaculties = Faculty::where('department_id', $departmentId)->get();
+        if ($allFaculties->isEmpty()) {
+            return ['success' => false, 'message' => 'Missing Faculty: No faculty members found in this department.'];
+        }
 
-        $labRooms = Classroom::where('room_type', 'like', '%Lab%')
-            ->where('availability', 'Available')
-            ->get();
+        // 3. Fetch Classrooms
+$theoryRooms = Classroom::where(function ($query) {
+    $query->where('room_type', 'like', '%Classroom%')
+          ->orWhere('room_type', 'like', '%Theory%')
+          ->orWhere('room_type', 'like', '%Lecture%');
+})
+->where(function ($query) {
+    $query->where('availability', 'YES')
+          ->orWhere('availability', 'Available');
+})
+->get();
 
-        if ($theoryRooms->isEmpty() && $labRooms->isEmpty()) {
-            return ['success' => false, 'message' => 'Generation Failed: No available classrooms.'];
+$labRooms = Classroom::where('room_type', 'like', '%Lab%')
+    ->where(function ($query) {
+        $query->where('availability', 'YES')
+              ->orWhere('availability', 'Available');
+    })
+    ->get();
+
+        if ($theoryRooms->isEmpty()) {
+            return ['success' => false, 'message' => 'Missing Classroom: No available theory classrooms found.'];
+        }
+        
+        $hasLabSubjects = $subjects->contains(fn($s) => stripos($s->subject_type, 'Lab') !== false);
+        if ($hasLabSubjects && $labRooms->isEmpty()) {
+            return ['success' => false, 'message' => 'Missing Lab: No available lab rooms found.'];
         }
 
         // Retry logic for heuristic scheduling
-        $maxRetries = 20;
+        $maxRetries = 200; // Increased retries since we are not failing fast
         for ($attempt = 1; $attempt <= $maxRetries; $attempt++) {
-            $success = $this->attemptGeneration($subjects, $theoryRooms, $labRooms, $departmentId, $semester, $division, $academicYear, $subjectClassrooms);
+            $success = $this->attemptGeneration($subjects, $allFaculties, $theoryRooms, $labRooms, $departmentId, $semester, $division, $academicYear, $subjectClassrooms);
             if ($success) {
-                return ['success' => true, 'message' => 'Timetable Generated Successfully! All constraints satisfied.'];
+                return ['success' => true, 'message' => 'Timetable Generated Successfully!'];
             }
         }
 
-        return ['success' => false, 'message' => 'Generation Failed: Could not find a conflict-free timetable under the configured constraints. Please verify faculty assignments, available rooms, working days, and slot settings.'];
+        return ['success' => false, 'message' => 'Constraint Conflict: Could not find a valid timetable layout that satisfies all constraints (Zero clashes, max workloads, avoiding consecutive repeats). Please allocate more faculties or relax constraints.'];
     }
 
-    protected function attemptGeneration($subjects, $theoryRooms, $labRooms, $departmentId, $semester, $division, $academicYear, $subjectClassrooms = [])
+    protected function attemptGeneration($subjects, $allFaculties, $theoryRooms, $labRooms, $departmentId, $semester, $division, $academicYear, $subjectClassrooms = [])
     {
         $this->initTrackingArrays($academicYear);
         $this->subjectDayTracker = [];
+        $this->studentDailyLoad = [];
+        $this->lastScheduledSubject = [];
+        
+        foreach ($this->days as $day) {
+            $this->studentDailyLoad[$day] = 0;
+            $this->lastScheduledSubject[$day] = [];
+        }
 
         $tempTimetable = [];
 
@@ -106,88 +123,128 @@ class TimetableGenerator
             $hoursToSchedule = $subject->hours_per_week;
             $isLab = stripos($subject->subject_type, 'Lab') !== false;
 
-            if (! empty($subjectClassrooms[$subject->id])) {
-                $manualRoomId = $subjectClassrooms[$subject->id];
-                $rooms = Classroom::where('id', $manualRoomId)->get();
-            } else {
-                $rooms = $isLab ? $labRooms : $theoryRooms;
-            }
-
             if ($isLab) {
                 $slotsNeededPerSession = 2;
                 $sessionsNeeded = max(1, (int)ceil($hoursToSchedule / 2));
+                $rooms = $labRooms;
             } else {
                 $slotsNeededPerSession = 1;
                 $sessionsNeeded = $hoursToSchedule;
+                if (! empty($subjectClassrooms[$subject->id])) {
+                    $manualRoomId = $subjectClassrooms[$subject->id];
+                    $rooms = Classroom::where('id', $manualRoomId)->get();
+                } else {
+                    $rooms = $theoryRooms;
+                }
             }
 
             for ($session = 0; $session < $sessionsNeeded; $session++) {
                 $assigned = false;
-
-                // Shuffle days and slots for randomness in retry logic (Rule 13, 15)
                 $shuffledDays = $this->days;
                 shuffle($shuffledDays);
 
                 foreach ($shuffledDays as $day) {
-                    if ($assigned) {
-                        break;
-                    }
+                    if ($assigned) break;
 
-                    // Skip if theory subject already scheduled on this day (Rule 6)
-                    if (! $isLab && isset($this->subjectDayTracker[$subject->id][$day])) {
+                    // Theory and Lab of same subject on different days
+                    // Theory should not repeat on the same day
+                    if (isset($this->subjectDayTracker[$subject->id][$day])) {
                         continue;
                     }
 
-                    $slots = range(1, $this->totalSlots);
-                    shuffle($slots);
+                    if ($this->studentDailyLoad[$day] + $slotsNeededPerSession > $this->maxStudentDailyLoad) {
+                        continue; // Student max daily load reached
+                    }
 
+                    $slots = range(1, $this->totalSlots);
+                    // Instead of shuffle, let's distribute evenly across the day (front-loading)
+                    // shuffle($slots); 
+                    
                     foreach ($slots as $slot) {
-                        if ($assigned) {
-                            break;
+                        if ($assigned) break;
+                        if ($slot == $this->lunchSlot) continue; // No classes in lunch break
+                        if ($slotsNeededPerSession > 1) {
+                            if ($slot == $this->totalSlots || $slot == ($this->lunchSlot - 1)) continue; // Can't start a 2-hr block right before day end or lunch
                         }
 
-                        // Check valid slot ranges
-                        if ($slot == $this->lunchSlot) {
+                        // Check same subject consecutive repeat rule
+                        if (isset($this->lastScheduledSubject[$day][$slot - 1]) && $this->lastScheduledSubject[$day][$slot - 1] == $subject->id) {
                             continue;
                         }
 
-                        if ($slotsNeededPerSession > 1) {
-                            if ($slot == $this->totalSlots || $slot == ($this->lunchSlot - 1)) {
-                                continue;
-                            }
-                        }
+                        if ($this->isSlotAllowedForSubject($subject, $slot)) {
+                            
+                            $facultyId = $subject->faculty_id;
+                            
+                            if ($this->canScheduleFaculty($facultyId, $day, $slot, $slotsNeededPerSession)) {
+                                $roomId = $this->findAvailableRoom($day, $slot, $rooms, $slotsNeededPerSession);
+                                if ($roomId) {
+                                    for ($i = 0; $i < $slotsNeededPerSession; $i++) {
+                                        $currentSlot = $slot + $i;
+                                        $tempTimetable[] = [
+                                            'department_id' => $departmentId,
+                                            'semester' => $semester,
+                                            'division' => $division,
+                                            'academic_year' => $academicYear,
+                                            'subject_id' => $subject->id,
+                                            'faculty_id' => $facultyId,
+                                            'classroom_id' => $roomId,
+                                            'day_of_week' => $day,
+                                            'slot_number' => $currentSlot,
+                                            'batch' => null
+                                        ];
 
-                        if ($this->isSlotAllowedForSubject($subject, $slot) && $this->canSchedule($subject, $day, $slot, $rooms, $slotsNeededPerSession)) {
-                            $roomId = $this->findAvailableRoom($day, $slot, $rooms, $slotsNeededPerSession);
+                                        $this->facultySchedule[$day][$currentSlot][] = $facultyId;
+                                        $this->roomSchedule[$day][$currentSlot][] = $roomId;
+                                        $this->lastScheduledSubject[$day][$currentSlot] = $subject->id;
 
-                            if ($roomId) {
-                                // Temporarily assign
-                                for ($i = 0; $i < $slotsNeededPerSession; $i++) {
-                                    $currentSlot = $slot + $i;
-
-                                    $tempTimetable[] = [
-                                        'department_id' => $departmentId,
-                                        'semester' => $semester,
-                                        'division' => $division,
-                                        'academic_year' => $academicYear,
-                                        'subject_id' => $subject->id,
-                                        'faculty_id' => $subject->faculty_id,
-                                        'classroom_id' => $roomId,
-                                        'day_of_week' => $day,
-                                        'slot_number' => $currentSlot,
-                                    ];
-
-                                    $this->facultySchedule[$day][$currentSlot][] = $subject->faculty_id;
-                                    $this->roomSchedule[$day][$currentSlot][] = $roomId;
-
-                                    if (! isset($this->facultyDailyLoad[$subject->faculty_id][$day])) {
-                                        $this->facultyDailyLoad[$subject->faculty_id][$day] = 0;
+                                        if (! isset($this->facultyDailyLoad[$facultyId][$day])) {
+                                            $this->facultyDailyLoad[$facultyId][$day] = 0;
+                                        }
+                                        $this->facultyDailyLoad[$facultyId][$day]++;
                                     }
-                                    $this->facultyDailyLoad[$subject->faculty_id][$day]++;
+                                    
+                                    $this->subjectDayTracker[$subject->id][$day] = true;
+                                    $this->studentDailyLoad[$day] += $slotsNeededPerSession;
+                                    $assigned = true;
                                 }
+                            } else {
+                                // Intelligent Faculty Reuse: The assigned faculty is busy or reached max load. 
+                                // Let's find ANOTHER available faculty in the same department as a backup.
+                                $backupFacultyId = $this->findAvailableBackupFaculty($allFaculties, $facultyId, $day, $slot, $slotsNeededPerSession);
+                                if ($backupFacultyId) {
+                                    $roomId = $this->findAvailableRoom($day, $slot, $rooms, $slotsNeededPerSession);
+                                    if ($roomId) {
+                                        for ($i = 0; $i < $slotsNeededPerSession; $i++) {
+                                            $currentSlot = $slot + $i;
+                                            $tempTimetable[] = [
+                                                'department_id' => $departmentId,
+                                                'semester' => $semester,
+                                                'division' => $division,
+                                                'academic_year' => $academicYear,
+                                                'subject_id' => $subject->id,
+                                                'faculty_id' => $backupFacultyId,
+                                                'classroom_id' => $roomId,
+                                                'day_of_week' => $day,
+                                                'slot_number' => $currentSlot,
+                                                'batch' => null
+                                            ];
 
-                                $this->subjectDayTracker[$subject->id][$day] = true;
-                                $assigned = true;
+                                            $this->facultySchedule[$day][$currentSlot][] = $backupFacultyId;
+                                            $this->roomSchedule[$day][$currentSlot][] = $roomId;
+                                            $this->lastScheduledSubject[$day][$currentSlot] = $subject->id;
+
+                                            if (! isset($this->facultyDailyLoad[$backupFacultyId][$day])) {
+                                                $this->facultyDailyLoad[$backupFacultyId][$day] = 0;
+                                            }
+                                            $this->facultyDailyLoad[$backupFacultyId][$day]++;
+                                        }
+                                        
+                                        $this->subjectDayTracker[$subject->id][$day] = true;
+                                        $this->studentDailyLoad[$day] += $slotsNeededPerSession;
+                                        $assigned = true;
+                                    }
+                                }
                             }
                         }
                     }
@@ -199,7 +256,6 @@ class TimetableGenerator
             }
         }
 
-        // If we reach here, all subjects were scheduled successfully
         foreach ($tempTimetable as $entry) {
             Timetable::create($entry);
         }
@@ -226,48 +282,36 @@ class TimetableGenerator
         }
     }
 
-    protected function canSchedule($subject, $day, $slot, $rooms, $slotsNeeded)
+    protected function canScheduleFaculty($facultyId, $day, $slot, $slotsNeeded)
     {
-        $facultyId = $subject->faculty_id;
-
-        // Rule 6: Maximum Faculty teaching load per day = 4 Hours
         $currentLoad = $this->facultyDailyLoad[$facultyId][$day] ?? 0;
-        if ($currentLoad + $slotsNeeded > $this->maxDailyLoad) {
-            return false;
-        }
+        if ($currentLoad + $slotsNeeded > $this->maxDailyLoad) return false;
 
         for ($i = 0; $i < $slotsNeeded; $i++) {
             $currentSlot = $slot + $i;
-
-            // Rule 10: Faculty Clash Rule
             if (isset($this->facultySchedule[$day][$currentSlot]) && in_array($facultyId, $this->facultySchedule[$day][$currentSlot])) {
                 return false;
             }
         }
-
-        // Rule 11 & 12: Room availability
-        $roomAvailable = $this->findAvailableRoom($day, $slot, $rooms, $slotsNeeded) !== null;
-        if (! $roomAvailable) {
-            return false;
-        }
-
         return true;
     }
 
-    protected function isSlotAllowedForSubject($subject, $slot)
+    protected function findAvailableBackupFaculty($allFaculties, $primaryFacultyId, $day, $slot, $slotsNeeded)
     {
-        if (stripos($subject->subject_type, 'Lab') !== false) {
-            return empty($this->labSlots) || in_array($slot, $this->labSlots, true);
+        $shuffled = $allFaculties->shuffle();
+        foreach ($shuffled as $faculty) {
+            if ($faculty->id == $primaryFacultyId) continue;
+            
+            if ($this->canScheduleFaculty($faculty->id, $day, $slot, $slotsNeeded)) {
+                return $faculty->id;
+            }
         }
-
-        return empty($this->lectureSlots) || in_array($slot, $this->lectureSlots, true);
+        return null;
     }
 
     protected function findAvailableRoom($day, $slot, $rooms, $slotsNeeded)
     {
-        // Shuffle rooms for better distribution (Rule 13)
         $shuffledRooms = $rooms->shuffle();
-
         foreach ($shuffledRooms as $room) {
             $isAvailable = true;
             for ($i = 0; $i < $slotsNeeded; $i++) {
@@ -277,11 +321,16 @@ class TimetableGenerator
                     break;
                 }
             }
-            if ($isAvailable) {
-                return $room->id;
-            }
+            if ($isAvailable) return $room->id;
         }
-
         return null;
+    }
+    
+    protected function isSlotAllowedForSubject($subject, $slot)
+    {
+        if (stripos($subject->subject_type, 'Lab') !== false) {
+            return empty($this->labSlots) || in_array($slot, $this->labSlots, true);
+        }
+        return empty($this->lectureSlots) || in_array($slot, $this->lectureSlots, true);
     }
 }
