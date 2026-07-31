@@ -30,7 +30,7 @@ class TimetableController extends Controller
         $departmentId = $request->query('department_id');
         $semester = $request->query('semester');
 
-        if (!$departmentId || !$semester) {
+        if (! $departmentId || ! $semester) {
             return Response::json([
                 'success' => false,
                 'message' => 'Department and semester are required to preview timetable data.',
@@ -38,7 +38,7 @@ class TimetableController extends Controller
         }
 
         $department = Department::find($departmentId);
-        if (!$department) {
+        if (! $department) {
             return Response::json([
                 'success' => false,
                 'message' => 'Selected department was not found.',
@@ -52,8 +52,14 @@ class TimetableController extends Controller
             ->orderBy('subject_code')
             ->get();
 
-        $facultyCount = Faculty::where('department_id', $departmentId)->count();
-        $availableClassrooms = Classroom::where('availability', 'Available')->get();
+        $faculties = Faculty::where('department_id', $departmentId)
+            ->orderBy('faculty_name')
+            ->get();
+
+        $availableClassrooms = Classroom::where('availability', 'Available')
+            ->orderBy('room_number')
+            ->get();
+
         $theoryRoomCount = $availableClassrooms->filter(fn ($room) => str_contains($room->room_type, 'Classroom') || str_contains($room->room_type, 'Theory') || str_contains($room->room_type, 'Lecture'))->count();
         $labRoomCount = $availableClassrooms->filter(fn ($room) => str_contains($room->room_type, 'Lab'))->count();
 
@@ -67,9 +73,19 @@ class TimetableController extends Controller
                 'subject_name' => $subject->subject_name,
                 'subject_type' => $subject->subject_type,
                 'hours_per_week' => $subject->hours_per_week,
+                'faculty_id' => $subject->faculty_id,
                 'faculty_assigned' => $subject->faculty?->faculty_name,
             ]),
-            'faculty_count' => $facultyCount,
+            'faculties' => $faculties->map(fn ($fac) => [
+                'id' => $fac->id,
+                'faculty_name' => $fac->faculty_name,
+            ]),
+            'classrooms' => $availableClassrooms->map(fn ($room) => [
+                'id' => $room->id,
+                'room_number' => $room->room_number,
+                'room_type' => $room->room_type,
+            ]),
+            'faculty_count' => $faculties->count(),
             'theory_room_count' => $theoryRoomCount,
             'lab_room_count' => $labRoomCount,
         ]);
@@ -90,7 +106,34 @@ class TimetableController extends Controller
             'lecture_slots.*' => ['integer', 'min:1', 'max:10'],
             'lab_slots' => ['nullable', 'array'],
             'lab_slots.*' => ['integer', 'min:1', 'max:10'],
+            'subject_faculties' => ['nullable', 'array'],
+            'subject_faculties.*' => ['nullable', 'exists:faculties,id'],
+            'subject_classrooms' => ['nullable', 'array'],
+            'subject_classrooms.*' => ['nullable', 'exists:classrooms,id'],
         ]);
+
+        // 1. Update faculty assignments if provided in subject_faculties
+        $subjectFaculties = $request->input('subject_faculties', []);
+        foreach ($subjectFaculties as $subjectId => $facultyId) {
+            if ($facultyId) {
+                Subject::where('id', $subjectId)->update(['faculty_id' => $facultyId]);
+            }
+        }
+
+        // 2. Validate that all active subjects for this department and semester have an assigned faculty member
+        $unassignedSubjects = Subject::where('department_id', $validated['department_id'])
+            ->where('semester', $validated['semester'])
+            ->where('status', 'Active')
+            ->whereNull('faculty_id')
+            ->get();
+
+        if ($unassignedSubjects->isNotEmpty()) {
+            $unassignedNames = $unassignedSubjects->pluck('subject_name')->join(', ');
+
+            return back()->withInput()->with('error', "Generation Failed: The following subjects must have an assigned faculty member: {$unassignedNames}");
+        }
+
+        $subjectClassrooms = $request->input('subject_classrooms', []);
 
         $lectureSlots = array_values(array_unique(array_filter($request->input('lecture_slots', []), fn ($slot) => is_numeric($slot))));
         $labSlots = array_values(array_unique(array_filter($request->input('lab_slots', []), fn ($slot) => is_numeric($slot))));
@@ -112,6 +155,7 @@ class TimetableController extends Controller
             true,
             true,
             true,
+            $subjectClassrooms
         );
 
         if (! $result['success']) {
