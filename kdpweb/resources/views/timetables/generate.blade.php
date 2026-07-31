@@ -209,43 +209,78 @@
         <p class="text-muted">Configure strict constraints and let AI orchestrate the perfect schedule.</p>
     </div>
 
-    <!-- Sticky Filters & Action Bar -->
-    <div class="sticky-action-bar">
-        <div class="d-flex flex-wrap gap-3 align-items-center flex-grow-1">
-            <select class="form-select" style="width: 200px;">
-                <option>Computer Engineering</option>
-                <option>Information Tech</option>
-            </select>
-            <select class="form-select" style="width: 140px;">
-                <option>Semester 5</option>
-                <option>Semester 6</option>
-            </select>
-            <select class="form-select" style="width: 140px;">
-                <option>2026-2027</option>
-            </select>
-            <select class="form-select" style="width: 100px;">
-                <option>Div A</option>
-                <option>Div B</option>
-            </select>
-            <select class="form-select" style="width: 160px;">
-                <option>Class Timetable</option>
-                <option>Faculty Timetable</option>
-            </select>
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i> {{ session('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-        
-        <div class="d-flex gap-2">
-            <button class="btn btn-premium btn-outline-soft"><i class="fas fa-save"></i> Save</button>
-            <button class="btn btn-premium btn-outline-soft"><i class="fas fa-file-pdf text-danger"></i> PDF</button>
-            <button class="btn btn-premium btn-outline-soft"><i class="fas fa-file-excel text-success"></i> Excel</button>
-            <button class="btn btn-premium btn-outline-soft"><i class="fas fa-sync-alt"></i> Regenerate</button>
-            <button class="btn btn-premium btn-primary-gradient"><i class="fas fa-magic"></i> Generate Timetable</button>
-            <button class="btn btn-premium btn-outline-soft" style="background: #10b981; color: white; border: none;"><i class="fas fa-upload"></i> Publish</button>
+    @endif
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+            <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
-    </div>
+    @endif
+
+    <form id="timetable-form" action="{{ route('timetables.generate') }}" method="POST">
+        @csrf
+        <input type="hidden" name="total_slots" value="6">
+        <input type="hidden" name="lunch_slot" value="4">
+        <input type="hidden" name="lecture_slots[]" value="1">
+        <input type="hidden" name="lecture_slots[]" value="2">
+        <input type="hidden" name="lecture_slots[]" value="3">
+        <input type="hidden" name="lecture_slots[]" value="5">
+        <input type="hidden" name="lecture_slots[]" value="6">
+        <input type="hidden" name="lab_slots[]" value="1">
+        <input type="hidden" name="lab_slots[]" value="2">
+        <input type="hidden" name="lab_slots[]" value="3">
+        <input type="hidden" name="lab_slots[]" value="5">
+        <input type="hidden" name="lab_slots[]" value="6">
+
+        <!-- Sticky Filters & Action Bar -->
+        <div class="sticky-action-bar">
+            <div class="d-flex flex-wrap gap-3 align-items-center flex-grow-1">
+                <select id="department_id" name="department_id" class="form-select" style="width: 200px;" required>
+                    <option value="">Select Department</option>
+                    @foreach($departments as $dept)
+                        <option value="{{ $dept->id }}" @selected($selectedDepartment == $dept->id)>{{ $dept->department_name }}</option>
+                    @endforeach
+                </select>
+                <select id="semester" name="semester" class="form-select" style="width: 140px;" required>
+                    <option value="">Select Semester</option>
+                    @for($s = 1; $s <= 8; $s++)
+                        <option value="{{ $s }}" @selected($selectedSemester == $s)>Semester {{ $s }}</option>
+                    @endfor
+                </select>
+                <select name="academic_year" class="form-select" style="width: 140px;" required>
+                    @foreach(['2025-2026', '2026-2027', '2027-2028'] as $year)
+                        <option value="{{ $year }}">{{ $year }}</option>
+                    @endforeach
+                </select>
+                <select name="division" class="form-select" style="width: 100px;" required>
+                    @foreach(['A', 'B', 'C', 'D'] as $div)
+                        <option value="{{ $div }}">Div {{ $div }}</option>
+                    @endforeach
+                </select>
+                <select class="form-select" style="width: 160px;">
+                    <option>Class Timetable</option>
+                    <option>Faculty Timetable</option>
+                </select>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-premium btn-outline-soft"><i class="fas fa-save"></i> Save</button>
+                <button type="button" class="btn btn-premium btn-outline-soft"><i class="fas fa-file-pdf text-danger"></i> PDF</button>
+                <button type="button" class="btn btn-premium btn-outline-soft"><i class="fas fa-file-excel text-success"></i> Excel</button>
+                <button type="button" class="btn btn-premium btn-outline-soft"><i class="fas fa-sync-alt"></i> Regenerate</button>
+                <button type="submit" class="btn btn-premium btn-primary-gradient"><i class="fas fa-magic"></i> Generate Timetable</button>
+                <button type="button" class="btn btn-premium btn-outline-soft" style="background: #10b981; color: white; border: none;"><i class="fas fa-upload"></i> Publish</button>
+            </div>
+        </div>
 
     <div class="row gx-4">
         <!-- LEFT COLUMN: Configuration -->
-        <div class="col-xl-8 col-lg-7">
+        <div class="col-12">
             
             <!-- Working Days Configuration -->
             <div class="glass-card">
@@ -267,7 +302,7 @@
                         <div class="day-name">{{ $day }}</div>
                         <div style="width: 80px;">
                             <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" checked>
+                                <input class="form-check-input" type="checkbox" name="working_days[]" value="{{ $day }}" checked>
                             </div>
                         </div>
                         <div style="width: 140px;"><input type="time" class="form-control" value="08:00"></div>
@@ -289,6 +324,14 @@
                         <div style="width: 140px;"><input type="time" class="form-control" disabled></div>
                         <div style="width: 140px;"><input type="time" class="form-control" disabled></div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Subject Mapping & Assignments Card -->
+            <div class="glass-card">
+                <h5 class="fw-bold mb-4"><i class="fas fa-user-tie text-primary me-2"></i> Subject Mapping & Faculty/Classroom Assignments</h5>
+                <div id="subject-mapping-container">
+                    <p class="text-muted text-center py-4">Please select a Department and Semester to configure subject mappings.</p>
                 </div>
             </div>
 
@@ -380,300 +423,8 @@
                 </div>
             </div>
         </div>
-
-        <!-- RIGHT COLUMN: Analytics -->
-        <div class="col-xl-4 col-lg-5">
-            
-            <!-- Summary Stats -->
-            <div class="glass-card">
-                <h5 class="fw-bold mb-4">Pre-Generation Analytics</h5>
-                
-                <div class="row g-3">
-                    <div class="col-6">
-                        <div class="stat-card p-3">
-                            <div class="stat-icon bg-blue-light"><i class="fas fa-book"></i></div>
-                            <div>
-                                <div class="stat-value">6</div>
-                                <div class="stat-label">Subjects</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="stat-card p-3">
-                            <div class="stat-icon bg-purple-light"><i class="fas fa-chalkboard-teacher"></i></div>
-                            <div>
-                                <div class="stat-value">22</div>
-                                <div class="stat-label">Lectures</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="stat-card p-3">
-                            <div class="stat-icon bg-orange-light"><i class="fas fa-laptop-code"></i></div>
-                            <div>
-                                <div class="stat-value">4</div>
-                                <div class="stat-label">Labs/Wk</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="stat-card p-3">
-                            <div class="stat-icon bg-green-light"><i class="fas fa-bolt"></i></div>
-                            <div>
-                                <div class="stat-value">98%</div>
-                                <div class="stat-label">AI Score</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mt-4">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="stat-label">Faculty Utilization</span>
-                        <span class="fw-bold" style="font-size:13px;">85%</span>
-                    </div>
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-primary" style="width: 85%"></div>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span class="stat-label">Classroom Utilization</span>
-                        <span class="fw-bold" style="font-size:13px;">62%</span>
-                    </div>
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-info" style="width: 62%"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- AI Status Checks -->
-            <div class="glass-card">
-                <h5 class="fw-bold mb-3">AI Diagnostic Status</h5>
-                <ul class="ai-checklist">
-                    <li><i class="fas fa-check-circle check-icon"></i> No Faculty Conflict Detected</li>
-                    <li><i class="fas fa-check-circle check-icon"></i> No Classroom Conflict Detected</li>
-                    <li><i class="fas fa-check-circle check-icon"></i> No Lab Conflict Detected</li>
-                    <li><i class="fas fa-check-circle check-icon"></i> Balanced Subject Distribution</li>
-                    <li><i class="fas fa-check-circle check-icon"></i> Faculty Load Optimized</li>
-                    <li><i class="fas fa-star text-warning" style="font-size: 18px;"></i> Ready to Publish</li>
-                </ul>
-                <div class="mt-3 text-muted" style="font-size: 12px;">
-                    <i class="fas fa-clock"></i> Generation Time: <strong>1.24s</strong>
-                </div>
-            </div>
-
-            <!-- Faculty Load Table -->
-            <div class="glass-card p-0 overflow-hidden">
-                <div class="p-4 pb-2">
-                    <h5 class="fw-bold mb-0">Predicted Faculty Load</h5>
-                    <p class="text-muted small">Max 4 hours per day</p>
-                </div>
-                <div class="table-responsive">
-                    <table class="table-modern">
-                        <thead>
-                            <tr>
-                                <th style="padding-left:24px;">Faculty</th>
-                                <th>M</th>
-                                <th>T</th>
-                                <th>W</th>
-                                <th>T</th>
-                                <th>F</th>
-                                <th>S</th>
-                                <th>Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style="padding-left:24px; font-weight: 500;">Dr. Alan</td>
-                                <td>3</td><td>2</td><td>3</td><td>2</td><td>3</td><td>0</td>
-                                <td><span class="badge bg-light text-dark">13</span></td>
-                            </tr>
-                            <tr>
-                                <td style="padding-left:24px; font-weight: 500;">Prof. Sarah</td>
-                                <td>2</td><td>4</td><td>2</td><td>4</td><td>2</td><td>2</td>
-                                <td><span class="badge bg-light text-dark">16</span></td>
-                            </tr>
-                            <tr>
-                                <td style="padding-left:24px; font-weight: 500;">Dr. Smith</td>
-                                <td><span class="text-danger-soft">5</span></td><td>2</td><td>3</td><td>2</td><td>2</td><td>0</td>
-                                <td><span class="badge bg-danger">14</span></td>
-                            </tr>
-                            <tr>
-                                <td style="padding-left:24px; font-weight: 500;">Prof. John</td>
-                                <td>2</td><td>2</td><td>2</td><td>2</td><td>2</td><td>2</td>
-                                <td><span class="badge bg-light text-dark">12</span></td>
-                            </tr>
-                            <tr>
-                                <td style="padding-left:24px; font-weight: 500;">Prof. Mike</td>
-                                <td>3</td><td>1</td><td>4</td><td>1</td><td>3</td><td>0</td>
-                                <td><span class="badge bg-light text-dark">12</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-        </div>
     </div>
-
-    <!-- Timetable Preview Grid Section -->
-    <div class="mt-4 mb-5">
-        <div class="glass-card p-0 overflow-hidden">
-            <div class="p-4 pb-0 d-flex justify-content-between align-items-center">
-                <div>
-                    <h4 class="fw-bold mb-1"><i class="fas fa-calendar-alt text-primary me-2"></i> Generated Timetable Preview</h4>
-                    <p class="text-muted small mb-0">Preview of the weekly schedule based on current AI configurations.</p>
-                </div>
-                <div>
-                    <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm"><i class="fas fa-check-circle me-1"></i> Conflict-Free</span>
-                </div>
-            </div>
-            <div class="p-4" style="overflow-x: auto;">
-                <div class="timetable-preview" id="timetable-grid" style="position: relative; display: grid; grid-template-columns: 80px repeat(6, 1fr); grid-template-rows: 60px repeat(11, 100px); min-width: 900px; border-top: 1px solid #ECECEC; border-left: 1px solid #ECECEC; background: white; border-radius: 12px;">
-                    
-                    <!-- Headers -->
-                    <div class="header-cell" style="grid-column: 1; grid-row: 1; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; color: #64748b; background-color: #f8fafc; border-top-left-radius: 12px; z-index: 2;">Time</div>
-                    <div class="header-cell" style="grid-column: 2; grid-row: 1; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; color: #1e293b; background-color: #f8fafc; z-index: 2;">Monday</div>
-                    <div class="header-cell" style="grid-column: 3; grid-row: 1; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; color: #1e293b; background-color: #f8fafc; z-index: 2;">Tuesday</div>
-                    <div class="header-cell" style="grid-column: 4; grid-row: 1; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; color: #1e293b; background-color: #f8fafc; z-index: 2;">Wednesday</div>
-                    <div class="header-cell" style="grid-column: 5; grid-row: 1; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; color: #1e293b; background-color: #f8fafc; z-index: 2;">Thursday</div>
-                    <div class="header-cell" style="grid-column: 6; grid-row: 1; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; color: #1e293b; background-color: #f8fafc; z-index: 2;">Friday</div>
-                    <div class="header-cell" style="grid-column: 7; grid-row: 1; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; color: #1e293b; background-color: #f8fafc; border-top-right-radius: 12px; z-index: 2;">Saturday</div>
-
-                    <!-- Time Labels -->
-                    <div class="time-label" style="grid-column: 1; grid-row: 2; font-weight: 600; font-size: 12px; color: #64748b; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; background-color: #fff; z-index: 2;">08:00 AM</div>
-                    <div class="time-label" style="grid-column: 1; grid-row: 3; font-weight: 600; font-size: 12px; color: #64748b; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; background-color: #fff; z-index: 2;">09:00 AM</div>
-                    <div class="time-label" style="grid-column: 1; grid-row: 4; font-weight: 600; font-size: 12px; color: #64748b; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; background-color: #fff; z-index: 2;">10:00 AM</div>
-                    <div class="time-label" style="grid-column: 1; grid-row: 5; font-weight: 600; font-size: 12px; color: #64748b; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; background-color: #fff; z-index: 2;">11:00 AM</div>
-                    <div class="time-label" style="grid-column: 1; grid-row: 6; font-weight: 600; font-size: 12px; color: #64748b; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; background-color: #fff; z-index: 2;">12:00 PM</div>
-                    <div class="time-label" style="grid-column: 1; grid-row: 7; font-weight: 600; font-size: 12px; color: #64748b; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; background-color: #fff; z-index: 2;">01:00 PM</div>
-                    <div class="time-label" style="grid-column: 1; grid-row: 8; font-weight: 600; font-size: 12px; color: #64748b; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; background-color: #fff; z-index: 2;">02:00 PM</div>
-                    <div class="time-label" style="grid-column: 1; grid-row: 9; font-weight: 600; font-size: 12px; color: #64748b; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; background-color: #fff; z-index: 2;">03:00 PM</div>
-                    <div class="time-label" style="grid-column: 1; grid-row: 10; font-weight: 600; font-size: 12px; color: #64748b; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; background-color: #fff; z-index: 2;">04:00 PM</div>
-                    <div class="time-label" style="grid-column: 1; grid-row: 11; font-weight: 600; font-size: 12px; color: #64748b; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; background-color: #fff; z-index: 2;">05:00 PM</div>
-                    <div class="time-label" style="grid-column: 1; grid-row: 12; font-weight: 600; font-size: 12px; color: #64748b; display: flex; align-items: center; justify-content: center; border-right: 1px solid #ECECEC; border-bottom: 1px solid #ECECEC; background-color: #fff; z-index: 2; border-bottom-left-radius: 12px;">06:00 PM</div>
-
-                    <!-- Lunch Break Row -->
-                    <div style="grid-column: 2 / 8; grid-row: 7; padding: 12px; z-index: 2;">
-                        <div style="width: 100%; height: 100%; background-color: #f0fdf4; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; color: #16a34a; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); border: 1px dashed #bbf7d0;">
-                            <i class="fas fa-utensils me-2"></i> Lunch Break
-                        </div>
-                    </div>
-
-                    <!-- CSS for preview cards -->
-                    <style>
-                        .preview-card {
-                            height: 100%; width: 100%; border-radius: 10px; padding: 12px;
-                            display: flex; flex-direction: column; cursor: pointer;
-                            transition: all 0.2s ease;
-                            border: 1px solid rgba(255,255,255,0.5);
-                        }
-                        .preview-card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
-                        .pc-sub { font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 4px; line-height: 1.2; }
-                        .pc-fac { font-weight: 600; font-size: 12px; color: #475569; margin-bottom: 2px; }
-                        .pc-room { font-weight: 500; font-size: 12px; color: #64748b; }
-                        .pc-time { font-weight: 600; font-size: 11px; color: #94a3b8; margin-top: auto; }
-                        
-                        .type-lecture { background-color: #e0f2fe; border-left: 4px solid #38bdf8; } /* Blue for Lecture */
-                        .type-lab { background-color: #ffedd5; border-left: 4px solid #fb923c; } /* Orange for Lab */
-                    </style>
-
-                    <!-- Example Cards -->
-                    <!-- Monday -->
-                    <div style="grid-column: 2; grid-row: 2; padding: 8px; z-index: 2;">
-                        <div class="preview-card type-lecture">
-                            <div class="pc-sub">Operating Systems</div>
-                            <div class="pc-fac">Dr. Alan</div>
-                            <div class="pc-room">Room 101</div>
-                            <div class="pc-time">08:00 AM - 09:00 AM</div>
-                        </div>
-                    </div>
-                    <div style="grid-column: 2; grid-row: 3; padding: 8px; z-index: 2;">
-                        <div class="preview-card type-lecture">
-                            <div class="pc-sub">Data Structures</div>
-                            <div class="pc-fac">Prof. Sarah</div>
-                            <div class="pc-room">Room 102</div>
-                            <div class="pc-time">09:00 AM - 10:00 AM</div>
-                        </div>
-                    </div>
-                    <div style="grid-column: 2; grid-row: 4 / span 2; padding: 8px; z-index: 2;">
-                        <div class="preview-card type-lab">
-                            <div class="pc-sub">Computer Networks Lab</div>
-                            <div class="pc-fac">Dr. Smith</div>
-                            <div class="pc-room">Lab 1</div>
-                            <div class="pc-time">10:00 AM - 12:00 PM</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Tuesday -->
-                    <div style="grid-column: 3; grid-row: 2 / span 2; padding: 8px; z-index: 2;">
-                        <div class="preview-card type-lab">
-                            <div class="pc-sub">Data Structures Lab</div>
-                            <div class="pc-fac">Prof. Sarah</div>
-                            <div class="pc-room">Lab 2</div>
-                            <div class="pc-time">08:00 AM - 10:00 AM</div>
-                        </div>
-                    </div>
-                    <div style="grid-column: 3; grid-row: 4; padding: 8px; z-index: 2;">
-                        <div class="preview-card type-lecture">
-                            <div class="pc-sub">Database Systems</div>
-                            <div class="pc-fac">Prof. Mike</div>
-                            <div class="pc-room">Room 103</div>
-                            <div class="pc-time">10:00 AM - 11:00 AM</div>
-                        </div>
-                    </div>
-                    <div style="grid-column: 3; grid-row: 5; padding: 8px; z-index: 2;">
-                        <div class="preview-card type-lecture">
-                            <div class="pc-sub">Operating Systems</div>
-                            <div class="pc-fac">Dr. Alan</div>
-                            <div class="pc-room">Room 101</div>
-                            <div class="pc-time">11:00 AM - 12:00 PM</div>
-                        </div>
-                    </div>
-
-                    <!-- Wednesday -->
-                    <div style="grid-column: 4; grid-row: 5 / span 2; padding: 8px; z-index: 2;">
-                        <div class="preview-card type-lab">
-                            <div class="pc-sub">Database Lab</div>
-                            <div class="pc-fac">Prof. Mike</div>
-                            <div class="pc-room">Lab 3</div>
-                            <div class="pc-time">11:00 AM - 01:00 PM</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Thursday -->
-                    <div style="grid-column: 5; grid-row: 8 / span 2; padding: 8px; z-index: 2;">
-                        <div class="preview-card type-lab">
-                            <div class="pc-sub">Operating Systems Lab</div>
-                            <div class="pc-fac">Dr. Alan</div>
-                            <div class="pc-room">Lab 5</div>
-                            <div class="pc-time">02:00 PM - 04:00 PM</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    // JS for Grid Borders
-    document.addEventListener("DOMContentLoaded", () => {
-        const gridContainer = document.getElementById('timetable-grid');
-        for (let r = 2; r <= 12; r++) {
-            for (let c = 2; c <= 7; c++) {
-                const box = document.createElement('div');
-                box.style.borderRight = '1px solid #ECECEC';
-                box.style.borderBottom = '1px solid #ECECEC';
-                box.style.gridColumn = c;
-                box.style.gridRow = r;
-                box.style.zIndex = 1;
-                gridContainer.appendChild(box);
-            }
-        }
-    });
-</div>
+    </form>
 
 <script>
     // Minimal JS to handle toggling Sunday disabled state
@@ -687,6 +438,120 @@
                 });
             });
         });
+    });
+</script>
+
+<script>
+    // JS for dynamic preview of subjects, faculties and classrooms
+    document.addEventListener("DOMContentLoaded", () => {
+        const deptSelect = document.getElementById('department_id');
+        const semSelect = document.getElementById('semester');
+        const container = document.getElementById('subject-mapping-container');
+
+        function fetchPreviewData() {
+            const deptId = deptSelect.value;
+            const sem = semSelect.value;
+
+            if (!deptId || !sem) {
+                container.innerHTML = '<p class="text-muted text-center py-4">Please select a Department and Semester to configure subject mappings.</p>';
+                return;
+            }
+
+            container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><p class="text-muted mt-2">Loading subjects...</p></div>';
+
+            fetch(`/timetables/preview?department_id=${deptId}&semester=${sem}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        container.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                        return;
+                    }
+
+                    if (data.subjects.length === 0) {
+                        container.innerHTML = '<p class="text-muted text-center py-4">No active subjects found for this selection.</p>';
+                        return;
+                    }
+
+                    let html = `
+                        <div class="table-responsive">
+                            <table class="table table-modern table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Subject</th>
+                                        <th>Type</th>
+                                        <th>Hours/Wk</th>
+                                        <th>Assign Faculty</th>
+                                        <th>Preferred Classroom</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+
+                    data.subjects.forEach(subject => {
+                        const isLab = subject.subject_type.toLowerCase().includes('lab');
+                        
+                        // Build faculty options
+                        let facultyOptions = '<option value="">-- Select Faculty --</option>';
+                        data.faculties.forEach(fac => {
+                            const selected = (subject.faculty_id == fac.id) ? 'selected' : '';
+                            facultyOptions += `<option value="${fac.id}" ${selected}>${fac.faculty_name}</option>`;
+                        });
+
+                        // Build classroom options
+                        let classroomOptions = '<option value="">Auto-Assign Room</option>';
+                        data.classrooms.forEach(room => {
+                            const isRoomLab = room.room_type.toLowerCase().includes('lab');
+                            const label = isRoomLab ? '🧪 Lab' : '📖 Theory';
+                            classroomOptions += `<option value="${room.id}">${room.room_number} (${label})</option>`;
+                        });
+
+                        html += `
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">${subject.subject_name}</div>
+                                    <small class="text-muted">${subject.subject_code}</small>
+                                </td>
+                                <td>
+                                    <span class="badge ${isLab ? 'bg-warning text-dark' : 'bg-success text-white'} px-2 py-1">
+                                        ${isLab ? 'Lab' : 'Theory'}
+                                    </span>
+                                </td>
+                                <td>${subject.hours_per_week} hrs</td>
+                                <td>
+                                    <select name="subject_faculties[${subject.id}]" class="form-select form-select-sm" style="min-width: 180px;" required>
+                                        ${facultyOptions}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="subject_classrooms[${subject.id}]" class="form-select form-select-sm" style="min-width: 180px;">
+                                        ${classroomOptions}
+                                    </select>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+
+                    container.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error(error);
+                    container.innerHTML = '<div class="alert alert-danger">Error loading timetable options. Please try again.</div>';
+                });
+        }
+
+        deptSelect.addEventListener('change', fetchPreviewData);
+        semSelect.addEventListener('change', fetchPreviewData);
+
+        // Run initial fetch if values are pre-selected
+        if (deptSelect.value && semSelect.value) {
+            fetchPreviewData();
+        }
     });
 </script>
 @endsection
