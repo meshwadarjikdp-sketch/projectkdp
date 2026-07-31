@@ -29,6 +29,7 @@ class TimetableController extends Controller
     {
         $departmentId = $request->query('department_id');
         $semester = $request->query('semester');
+        $workingDaysInput = $request->query('working_days', 'Monday,Tuesday,Wednesday,Thursday,Friday');
 
         if (! $departmentId || ! $semester) {
             return Response::json([
@@ -62,6 +63,36 @@ class TimetableController extends Controller
 
         $theoryRoomCount = $availableClassrooms->filter(fn ($room) => str_contains($room->room_type, 'Classroom') || str_contains($room->room_type, 'Theory') || str_contains($room->room_type, 'Lecture'))->count();
         $labRoomCount = $availableClassrooms->filter(fn ($room) => str_contains($room->room_type, 'Lab'))->count();
+        $workingDays = array_values(array_filter(array_map('trim', explode(',', $workingDaysInput)), fn ($day) => $day !== ''));
+        $workingDayCount = count($workingDays) ?: 5;
+
+        $theoryHours = $subjects->filter(fn ($subject) => stripos($subject->subject_type, 'Lab') === false)->sum('hours_per_week');
+        $labHours = $subjects->filter(fn ($subject) => stripos($subject->subject_type, 'Lab') !== false)->sum('hours_per_week');
+        $assignedFacultyCount = $subjects->filter(fn ($subject) => ! empty($subject->faculty_id))->count();
+
+        $predictedFacultyLoad = [];
+        foreach ($subjects as $subject) {
+            if (empty($subject->faculty_id)) {
+                continue;
+            }
+
+            $facultyId = (string) $subject->faculty_id;
+            if (! isset($predictedFacultyLoad[$facultyId])) {
+                $predictedFacultyLoad[$facultyId] = [
+                    'faculty_id' => $subject->faculty_id,
+                    'faculty_name' => $subject->faculty?->faculty_name ?? 'Unassigned',
+                    'weekly_hours' => 0,
+                    'estimated_daily_load' => 0,
+                ];
+            }
+
+            $predictedFacultyLoad[$facultyId]['weekly_hours'] += (int) $subject->hours_per_week;
+        }
+
+        foreach ($predictedFacultyLoad as $facultyId => $load) {
+            $predictedFacultyLoad[$facultyId]['estimated_daily_load'] = max(1, (int) ceil($load['weekly_hours'] / max(1, $workingDayCount)));
+            $predictedFacultyLoad[$facultyId]['faculty_id'] = (int) $facultyId;
+        }
 
         return Response::json([
             'success' => true,
@@ -88,6 +119,18 @@ class TimetableController extends Controller
             'faculty_count' => $faculties->count(),
             'theory_room_count' => $theoryRoomCount,
             'lab_room_count' => $labRoomCount,
+            'analytics' => [
+                'subject_metrics' => [
+                    'total_subjects' => $subjects->count(),
+                    'assigned_faculty_count' => $assignedFacultyCount,
+                    'theory_subjects' => $subjects->filter(fn ($subject) => stripos($subject->subject_type, 'Lab') === false)->count(),
+                    'lab_subjects' => $subjects->filter(fn ($subject) => stripos($subject->subject_type, 'Lab') !== false)->count(),
+                    'total_theory_hours' => (int) $theoryHours,
+                    'total_lab_hours' => (int) $labHours,
+                    'average_hours_per_subject' => $subjects->count() > 0 ? round((($theoryHours + $labHours) / $subjects->count()), 1) : 0,
+                ],
+                'predicted_faculty_load' => $predictedFacultyLoad,
+            ],
         ]);
     }
 

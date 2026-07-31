@@ -451,6 +451,9 @@
         function fetchPreviewData() {
             const deptId = deptSelect.value;
             const sem = semSelect.value;
+            const selectedDays = Array.from(document.querySelectorAll('input[name="working_days[]"]:checked'))
+                .map(input => input.value)
+                .join(',');
 
             if (!deptId || !sem) {
                 container.innerHTML = '<p class="text-muted text-center py-4">Please select a Department and Semester to configure subject mappings.</p>';
@@ -459,7 +462,7 @@
 
             container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><p class="text-muted mt-2">Loading subjects...</p></div>';
 
-            fetch(`/timetables/preview?department_id=${deptId}&semester=${sem}`)
+            fetch(`/timetables/preview?department_id=${deptId}&semester=${sem}&working_days=${encodeURIComponent(selectedDays)}`)
                 .then(response => response.json())
                 .then(data => {
                     if (!data.success) {
@@ -472,7 +475,101 @@
                         return;
                     }
 
+                    const metrics = data.analytics?.subject_metrics ?? {};
+                    const facultyLoad = data.analytics?.predicted_faculty_load ? Object.values(data.analytics.predicted_faculty_load) : [];
+
                     let html = `
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-blue-light"><i class="fas fa-book-open"></i></div>
+                                    <div>
+                                        <div class="stat-value">${metrics.total_subjects ?? 0}</div>
+                                        <div class="stat-label">Subjects</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-green-light"><i class="fas fa-chalkboard-user"></i></div>
+                                    <div>
+                                        <div class="stat-value">${metrics.total_theory_hours ?? 0}</div>
+                                        <div class="stat-label">Theory Hours/Wk</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-purple-light"><i class="fas fa-flask"></i></div>
+                                    <div>
+                                        <div class="stat-value">${metrics.total_lab_hours ?? 0}</div>
+                                        <div class="stat-label">Lab Hours/Wk</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon bg-orange-light"><i class="fas fa-user-check"></i></div>
+                                    <div>
+                                        <div class="stat-value">${metrics.assigned_faculty_count ?? 0}</div>
+                                        <div class="stat-label">Faculty Assigned</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-3 mb-4">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-chart-line text-primary me-2"></i> Pre-Generation Analytics</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="text-muted small">Theory Subjects</div>
+                                    <div class="fw-bold">${metrics.theory_subjects ?? 0}</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-muted small">Lab Subjects</div>
+                                    <div class="fw-bold">${metrics.lab_subjects ?? 0}</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-muted small">Avg Hours / Subject</div>
+                                    <div class="fw-bold">${metrics.average_hours_per_subject ?? 0}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-users text-primary me-2"></i> Predicted Faculty Load</h6>
+                            <div class="table-responsive">
+                                <table class="table table-modern table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Faculty</th>
+                                            <th>Weekly Hours</th>
+                                            <th>Est. Daily Load</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+
+                    if (facultyLoad.length > 0) {
+                        facultyLoad.forEach(item => {
+                            html += `
+                                <tr>
+                                    <td>${item.faculty_name}</td>
+                                    <td>${item.weekly_hours} hrs</td>
+                                    <td>${item.estimated_daily_load} hrs/day</td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        html += '<tr><td colspan="3" class="text-muted text-center">No faculty load forecast available yet.</td></tr>';
+                    }
+
+                    html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                         <div class="table-responsive">
                             <table class="table table-modern table-hover align-middle mb-0">
                                 <thead>
@@ -489,15 +586,13 @@
 
                     data.subjects.forEach(subject => {
                         const isLab = subject.subject_type.toLowerCase().includes('lab');
-                        
-                        // Build faculty options
+
                         let facultyOptions = '<option value="">-- Select Faculty --</option>';
                         data.faculties.forEach(fac => {
                             const selected = (subject.faculty_id == fac.id) ? 'selected' : '';
                             facultyOptions += `<option value="${fac.id}" ${selected}>${fac.faculty_name}</option>`;
                         });
 
-                        // Build classroom options
                         let classroomOptions = '<option value="">Auto-Assign Room</option>';
                         data.classrooms.forEach(room => {
                             const isRoomLab = room.room_type.toLowerCase().includes('lab');
@@ -547,8 +642,10 @@
 
         deptSelect.addEventListener('change', fetchPreviewData);
         semSelect.addEventListener('change', fetchPreviewData);
+        document.querySelectorAll('input[name="working_days[]"]').forEach(checkbox => {
+            checkbox.addEventListener('change', fetchPreviewData);
+        });
 
-        // Run initial fetch if values are pre-selected
         if (deptSelect.value && semSelect.value) {
             fetchPreviewData();
         }
