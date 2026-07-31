@@ -18,7 +18,7 @@ class TimetableGenerator
 
     protected $labSlots = [];
 
-    protected $maxDailyLoad = 4;
+    protected $maxDailyLoad = 6;
 
     // Global trackers to prevent cross-division clashes
     protected $facultySchedule = [];
@@ -114,11 +114,8 @@ class TimetableGenerator
             }
 
             if ($isLab) {
-                if ($hoursToSchedule % 2 !== 0) {
-                    return false;
-                }
                 $slotsNeededPerSession = 2;
-                $sessionsNeeded = 1;
+                $sessionsNeeded = max(1, (int)ceil($hoursToSchedule / 2));
             } else {
                 $slotsNeededPerSession = 1;
                 $sessionsNeeded = $hoursToSchedule;
